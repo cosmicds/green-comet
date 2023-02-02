@@ -1,0 +1,2140 @@
+
+<template>
+  <v-app
+    id="app"
+    :style="cssVars"
+  >
+  <div
+    id="main-content"
+  >
+
+  <WorldWideTelescope
+      :wwt-namespace="wwtNamespace"
+      :class="{ pointer: lastClosePt !== null }"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointerdown="onPointerDown"
+    ></WorldWideTelescope>
+    
+    <v-overlay
+      :model-value="showSplashScreen"
+      absolute
+      opacity="0.6"
+      id="splash-overlay"
+    >
+      <img
+        id="splash-screen"
+        :src="require(`./assets/Green_Comet_Mini_Splashscreen.png`)"
+        v-click-outside="closeSplashScreen"
+        contain
+      />
+      <a
+        id="splash-close"
+        @click="closeSplashScreen">
+      </a>
+    </v-overlay>
+
+    <transition name="fade">
+      <div
+        class="modal"
+        id="modal-loading"
+        v-show="isLoading"
+      >
+        <div class="container">
+          <div class="spinner"></div>
+          <p>Loading …</p>
+        </div>
+      </div>
+    </transition>
+
+    <div class="left-content">
+      <folder-view
+        v-if="imagesetFolder !== null"
+        class="folder-view"
+        sliders
+        expandable
+        :thumbnails="false"
+        :root-folder="imagesetFolder"
+        :wwt-namespace="wwtNamespace"
+        flex-direction="column"
+        @select="onItemSelected"
+        @opacity="updateImageOpacity"
+      ></folder-view>
+    </div>
+
+    <div class="top-content">
+      <v-tooltip
+        v-model="showVideoTooltip"
+        :open-on-click="false"
+        :open-on-focus="false"
+        :open-on-hover="true"
+        close-on-content-click
+        :location="smallSize ? 'bottom' : 'end'"
+      >
+        <template v-slot:activator="{ props }">
+          <div
+            @mouseover="showVideoTooltip = true"
+            @mouseleave="showVideoTooltip = false"
+            id="video-icon-wrapper"
+            class="control-icon-wrapper"
+            v-bind="props"
+          >
+            <font-awesome-icon
+              id="video-icon"
+              class="control-icon"
+              icon="video"
+              size="lg"
+              
+            ></font-awesome-icon>
+          </div>
+        </template>
+        <span>Watch video</span>
+      </v-tooltip>
+      <v-tooltip
+        v-model="showMapTooltip"
+        location="bottom"
+        :open-on-click="false"
+        :open-on-focus="false"
+        :open-on-hover="true"
+      >
+        <template v-slot:activator="{ props }">
+          <div
+            id="text-icon-wrapper"
+            class="control-icon-wrapper"
+            @mouseover="showMapTooltip = true"
+            @mouseleave="showMapTooltip = false"
+            v-bind="props"
+            @click="showLocationSelector = true"
+          >
+            <font-awesome-icon
+              id="location-icon"
+              class="control-icon"
+              icon="location-pin"
+              size="lg"
+            ></font-awesome-icon>
+          </div>
+        </template>
+        <span>Select location</span>
+      </v-tooltip>
+      <v-tooltip
+        :location="smallSize ? 'bottom' : 'start'"
+        :open-on-click="false"
+        :open-on-focus="false"
+        :open-on-hover="true"
+        v-model="showTextTooltip"
+        :offset="smallSize ? 0 : '45px'"
+      >
+        <template v-slot:activator="{ props }">
+          <div
+            id="text-icon-wrapper"
+            class="control-icon-wrapper"
+            @mouseover="showTextTooltip = true"
+            @mouseleave="showTextTooltip = false"
+            v-bind="props"
+            @click="showTextSheet = true"
+          >
+            <font-awesome-icon
+              id="text-icon"
+              class="control-icon"
+              icon="book-open"
+              size="lg"
+            ></font-awesome-icon>
+          </div>
+        </template>
+        <span>Learn more</span>
+      </v-tooltip>
+    </div>
+
+    <div class="bottom-content">
+      <div
+        id="controls"
+        class="control-icon-wrapper"
+      >
+        <div id="controls-top-row">
+          <font-awesome-icon
+            :icon="showControls ? `chevron-up` : `gear`"
+            size="lg"
+            :color="cometColor"
+            @click="showControls = !showControls"
+          />
+        </div>
+          <transition-expand>
+          <div v-if="showControls" class="controls-content">
+            <date-picker
+              dark
+              time-picker
+              enable-seconds
+              :is-24="false"
+              v-model="timeOfDay"
+            />
+            <v-checkbox
+              :color="cometColor"
+              v-model="showAltAzGrid"
+              label="Show Grid"
+              hide-details
+            />
+            <v-checkbox
+              :color="cometColor"
+              v-model="showConstellations"
+              label="Show Constellations"
+              hide-details
+            />
+            <v-checkbox
+              :color="cometColor"
+              v-model="showHorizon"
+              label="Show Horizon"
+              hide-details
+            />
+            <v-btn
+              :color="cometColor"
+              @click="centerOnCurrentDate"
+            >
+              Center on Now
+            </v-btn>
+          </div>
+        </transition-expand>
+      </div>
+      <div id="tools">
+        <span class="tool-container">
+          <v-chip
+            id="sliderlabel"
+            outlined
+            label
+            >
+              Date:
+          </v-chip>
+          <vue-slider
+            id="slider"
+            adsorb
+            included
+            :marks="(d: number) => {
+              return weeklyDates.includes(d) || dailyDates.includes(d);
+            }"
+            :order="false"
+            v-model="selectedTime"
+            :data="dates"
+            tooltip="always"
+            :tooltip-formatter="(v: number) => 
+              toLocaleUTCDateString(new Date(v))
+            "
+            >
+              <template v-slot:mark="{ pos, value }">
+                <div
+                  :class="['mark-line', { tall: weeklyDates.includes(value) }]"
+                  :style="{ left: `${pos}%` }">
+                </div>
+              </template>
+            </vue-slider>
+          </span>
+      </div>
+      <div id="credits" class="ui-text">
+        <div>
+          Powered by
+          <a href="https://worldwidetelescope.org/home/" target="_blank"
+            >WorldWide Telescope</a
+          >
+        </div>
+        <div id="icons-container">
+          <a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank"
+            ><img alt="CosmicDS Logo" src="../../assets/cosmicds_logo_for_dark_backgrounds.png"
+          /></a>
+          <a href="https://worldwidetelescope.org/home/" target="_blank"
+            ><img alt="WWT Logo" src="../../assets/logo_wwt.png"
+          /></a>
+          <a href="https://science.nasa.gov/learners" target="_blank"
+            ><img alt="SciAct Logo" src="../../assets/logo_sciact.png"
+          /></a>
+          <!-- <ShareNetwork
+            v-for="network in networks"
+            :key="network.name"
+            :network="network.name"
+            :class="`${network.name}-button`"
+            :style="{ backgroundColor: network.color, width: 'fit-content' }"
+            :description="description"
+            :url="url"
+            :title="title"
+            :hashtags="hashtagString"
+            :quote="description"
+            twitter-user="WWTelescope"
+          >
+            <font-awesome-icon
+              :class="`${network.name}-icon`"
+              :icon="['fab', network.name]"
+              size="lg"
+            ></font-awesome-icon>
+          </ShareNetwork> -->
+        </div>
+      </div>
+    </div>
+
+    <v-dialog
+      id="location-dialog"
+      v-model="showLocationSelector"
+    >
+      <v-card id="location-selector">
+        <div
+          class="text-center"
+        >
+          Move around the map and double-click to change location
+        </div>
+        <v-btn
+          @click="getLocation"
+        >
+          Use My Location
+        </v-btn>
+        <div class="text-center red--text">{{  locationErrorMessage  }}</div>
+        <div id="map-container"></div>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog
+      class="bottom-sheet"
+      id="text-bottom-sheet"  
+      hide-overlay
+      persistent
+      no-click-animation
+      absolute
+      width="100%"
+      :scrim="false"
+      location="bottom"
+      v-model="showTextSheet"
+      transition="dialog-bottom-transition"
+    >
+      <v-card height="100%">
+      <!-- <v-container height="11px">
+        <font-awesome-icon
+          class="close-icon"
+          icon="times"
+          @click="showTextSheet = false"
+        ></font-awesome-icon>
+      </v-container> -->
+      <v-tabs
+        v-model="tab"
+        height="32px"
+        :color="cometColor"
+        :slider-color="cometColor"
+        id="tabs"
+        dense
+        grow
+      >
+        <v-tab><h3>Information</h3></v-tab>
+        <v-tab><h3>Using WWT</h3></v-tab>
+      </v-tabs>
+      <font-awesome-icon
+        id="close-text-icon"
+        class="control-icon"
+        icon="times"
+        size="lg"
+        @click="showTextSheet = false"
+      ></font-awesome-icon>
+        <v-window v-model="tab" id="tab-items" class="pb-2 no-bottom-border-radius">
+          <v-window-item>
+            <v-card class="no-bottom-border-radius scrollable">
+              <v-card-text class="info-text no-bottom-border-radius">
+                
+                Comets are dusty snowballs, large clumps of rock and ice, that originate in the outer solar system. The “Green Comet” (or <a href="https://science.nasa.gov/comet-2022-e3-ztf" target="_blank">C/2022 E3</a>) makes its closest approach to the Sun (and to Earth) in early 2023. The comet images in this interactive view were taken on different dates from December 2022 through January 2023 by astrophotographer <a href="http://www.astrostudio.at/" target="_blank">Gerald Rhemann</a>.
+                <br><br>
+
+                <h3>Explore!</h3>
+                Adjusting the <span class="ui-element-ref-comet">Date</span> slider along the bottom of the screen shows you the position of the comet since it was discovered in March 2022. 
+                <ul class="text-list">
+                  <li>Move the date slider forward and backward. Observe how the comet moves in the sky with time. Can you find when the comet is moving fastest in the sky and when it is moving slowest in the sky? Can you find when the comet path “twirls” in the sky? (This is known as “retrograde motion.”)</li>
+                  <li>Look at the comet images in order by date. What do you notice about the direction of the comet’s tails relative to the motion of the comet?</li>
+                </ul>
+                <br>
+
+                <h3>Why is the Comet Green?</h3>
+                Visually, comets have three parts: the bright coma and two tails. The coma is material being vaporized off the comet’s surface by radiation from the Sun. The green color of the comet is due to dicarbon (a molecule made of two carbon atoms, C<sub>2</sub>) in the comet’s coma. When excited by ultraviolet light from the sun, dicarbon fluoresces with a blue-green light. 
+                <br><br>
+
+                <h3>A Comet’s Tail</h3>
+                The comet has an ionized gas tail and a dust tail. The gas tail is composed of the gas being blown off the comet’s surface and ionized (given an electric charge) by ultraviolet radiation from the Sun. This charged gas is blown in a direction <strong>away</strong> from the Sun by the solar wind. The dust tail is made of dust blown off the surface by jets of vaporizing gas. The dust is electrically neutral and does not get pushed as hard by the solar wind, which is why it is generally distinct from the gas tail. Many people think that the tails trail behind the comet as it moves forward. You can see from the images that the solar wind is blowing the tails ahead of the comet as it moves in space!
+
+                <br><br><br>
+                <div class="credits">
+                <h3>Credits:</h3>
+                <h4><a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank">CosmicDS</a> Mini Stories Team:</h4>
+                Jon Carifio<br>
+                John Lewis<br>
+                Pat Udomprasert<br>
+                Alyssa Goodman<br>
+                Mary Dussault<br>
+                Harry Houghton<br>
+                Anna Nolin<br>
+                Evaluator: Sue Sunbury<br>
+                <br>
+                <h4>WorldWide Telescope Team:</h4>
+                Peter Williams<br>
+                A. David Weigel<br>
+                Jon Carifio<br>
+                <br>
+                The material contained on this website is based upon work supported by NASA under award No. 80NSSC21M0002. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Aeronautics and Space Administration.
+                </div>
+                <v-spacer class="end-spacer"></v-spacer>
+              </v-card-text>
+            </v-card>
+          </v-window-item>
+          <v-window-item>
+            <v-card class="no-bottom-border-radius scrollable" style="height: 100%;">
+              <v-card-text class="info-text no-bottom-border-radius">
+                <v-container>
+                  <v-row align="center">
+                  <v-col cols="4">
+                      <v-chip
+                        label
+                        outlined
+                      >
+                        Pan
+                      </v-chip>
+                    </v-col>
+                    <v-col cols="8" class="pt-1">
+                      <strong>{{ touchscreen ? "press + drag" : "click + drag" }}</strong><br>
+                
+                    </v-col>
+                  </v-row>
+                  <v-row align="center">
+                    <v-col cols="4">
+                      <v-chip
+                        label
+                        outlined
+                      >
+                        Zoom
+                      </v-chip>
+                    </v-col>
+                    <v-col cols="8" class="pt-1">
+                      <strong>{{ touchscreen ? "pinch in and out" : "scroll in and out" }}</strong><br>
+                      
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="12">
+                      <div
+                        style="min-height: 120px;"
+                      >
+                        <h4>Tips:</h4>
+                        <ul class="text-list">
+                          <li>
+                            Click <font-awesome-icon
+                                  class="control-icon"
+                                  icon="location-pin"
+                                  size="lg" 
+                                ></font-awesome-icon>
+                            to adjust your location.
+                          </li>
+                          <li>
+                            Adjust the date slider at the bottom to see the location of the Green Comet on a particular day.
+                          </li>
+                          <li>
+                            The white markers in the sky show the path of the comet on a particular date at 00:00 UT. Circle markers are separated by 1 week. Dot markers are separated by 1 day. The pink marker shows the position of the comet at the displayed local time.
+                          </li>
+                          <li>
+                            Click a date on the panel in the upper left to see an image of the comet photographed by Gerald Rhemann on that day. The slider under the date adjusts the image opacity.
+                          </li>
+                          <li>
+                            Depending on what you are trying to see, you may want to try different zoom levels. Zooming out will help you see the comet's overall path better. Zooming in will help you see more details in the comet images.
+                          </li>                          
+                          <li>
+                            Adjust your local time using the time controller and choose whether to display the sky grid, constellations, or the horizon. You can also recenter the view on the comet's location today.
+                          </li>
+                        </ul>
+                      <br>
+                      This Mini Data Story is powered by WorldWide Telescope (WWT).
+
+                      </div>
+                    </v-col>
+                  </v-row>
+                  <v-row>
+                    <v-col cols="12">
+                      <div class="credits">
+                      <h3>Credits:</h3>
+                      <h4><a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank">CosmicDS</a> Mini Stories Team:</h4>
+                      Jon Carifio<br>
+                      John Lewis<br>
+                      Pat Udomprasert<br>
+                      Alyssa Goodman<br>
+                      Mary Dussault<br>
+                      Harry Houghton<br>
+                      Anna Nolin<br>
+                      Evaluator: Sue Sunbury<br>
+                      <br>
+                      <h4>WorldWide Telescope Team:</h4>
+                      Peter Williams<br>
+                      A. David Weigel<br>
+                      Jon Carifio<br>
+                      </div>
+                      <v-spacer class="end-spacer"></v-spacer>
+                    </v-col>
+                  </v-row>
+                </v-container>              
+              </v-card-text>
+            </v-card>
+          </v-window-item>
+        </v-window>
+      </v-card>
+    </v-dialog>
+
+    <notifications group="startup-location" position="top right" />
+
+  </div>
+  </v-app>
+</template>
+
+<script lang="ts">
+import { defineComponent } from 'vue';
+import { csvFormatRows, csvParse } from "d3-dsv";
+
+import { distance, fmtDegLat, fmtDegLon, fmtHours } from "@wwtelescope/astro";
+import { Color, Constellations, Folder, Grids, LayerManager, Poly, RenderContext, Settings, SpreadSheetLayer, WWTControl } from "@wwtelescope/engine";
+import { ImageSetType, MarkerScales, PlotTypes } from "@wwtelescope/engine-types";
+
+import L, { LeafletMouseEvent, Map } from "leaflet";
+import { MiniDSBase, BackgroundImageset, skyBackgroundImagesets } from "@minids/common"
+
+import { ImageSetLayer, Place, Imageset } from "@wwtelescope/engine";
+import { applyImageSetLayerSetting } from "@wwtelescope/engine-helpers";
+
+import { drawSkyOverlays, initializeConstellationNames } from "./wwt-hacks";
+
+
+import {
+  ephemerisFullWeeklyCsv,
+  ephemeris2023DailyCsv
+} from "./data";
+import { Script } from 'vm';
+
+const D2R = Math.PI / 180;
+const R2D = 180 / Math.PI;
+
+function parseCsvTable(csv: string) {
+  return csvParse(csv, (d) => {
+    return {
+      date: new Date(d.Date!),
+      ra: +d.RA!,
+      dec: +d.Dec!,
+      tMag: +d.Tmag!,
+    };
+  });
+}
+const fullWeeklyTable = parseCsvTable(ephemerisFullWeeklyCsv);
+const daily2023Table = parseCsvTable(ephemeris2023DailyCsv);
+
+// NB: The two tables have identical structures.
+// We aren't exporting these types anywhere, so
+// generic names are fine
+type Table = typeof fullWeeklyTable;
+type TableRow = typeof fullWeeklyTable[number];
+
+function formatCsvTable(table: Table): string {
+  return csvFormatRows([[
+        "Date", "RA", "Dec", "Tmag"
+      ]].concat(table.map((d, _i) => {
+        return [
+          d.date.toISOString(),
+          d.ra.toString(),
+          d.dec.toString(),
+          d.tMag.toString(),
+        ];
+    }))).replace(/\n/g, '\r\n');
+    // By using a regex, we replace all instances.
+    // For WWT implementation reasons (left over from 
+    // the Windows client?), we need the line endings 
+    // to be CRLF
+}
+
+const fullWeeklyString = formatCsvTable(fullWeeklyTable);
+const daily2023String = formatCsvTable(daily2023Table);
+
+const weeklyDates = fullWeeklyTable.map(r => r.date.getTime());
+const dailyDates = daily2023Table.map(r => r.date.getTime());
+const minDate = Math.min(...weeklyDates, ...dailyDates);
+const maxDate = Math.max(...weeklyDates, ...dailyDates);
+const dates: number[] = [];
+
+const d = new Date(minDate);
+let t = d.getTime();
+while (t <= maxDate) {
+  dates.push(t);
+  d.setUTCDate(d.getUTCDate() + 1);
+  t = d.getTime();
+}
+
+type LocationRad = {
+  longitudeRad: number;
+  latitudeRad: number;
+}
+
+type EquatorialRad = {
+  raRad: number;
+  decRad: number;
+}
+
+type HorizontalRad = {
+  altRad: number;
+  azRad: number;
+}
+
+type SheetType = "text" | "video" | null;
+
+export default defineComponent({
+  extends: MiniDSBase,
+  
+  props: {
+    wtml: {
+      type: Object,
+      required: true
+    },
+    wwtNamespace: {
+      type: String,
+      required: true
+    },
+    url: {
+      type: String,
+      required: true
+    },
+    thumbnailUrl: {
+      type: String,
+      required: true
+    },
+    bgWtml: {
+      type: String,
+      required: true
+    },
+    bgName: {
+      type: String,
+      required: true
+    }
+  },
+  data() {
+    const now = new Date();
+    return {
+      showSplashScreen: true,
+      imagesetLayers: {} as Record<string, ImageSetLayer>,
+      layersLoaded: false,
+      positionSet: false,
+      imagesetFolder: null as Folder | null,
+      backgroundImagesets: [] as BackgroundImageset[],
+      decRadLowerBound: 0.2,
+
+      showAltAzGrid: true,
+      showConstellations: false,
+      showHorizon: false,
+
+      currentDailyLayer: null as SpreadSheetLayer | null,
+      currentWeeklyLayer: null as SpreadSheetLayer | null,
+
+      dailyDates: dailyDates,
+      weeklyDates: weeklyDates,
+      dates: dates,
+      
+      lastClosePt: null as TableRow | null,
+      ephemerisColor: "#FFFFFF",
+      cometColor: "#04D6B0",
+      todayColor: "#D60493",
+
+      sheet: null as SheetType,
+      showMapTooltip: false,
+      showTextTooltip: false,
+      showVideoTooltip: false,
+      showLocationSelector: false,
+      showControls: true,
+      tab: 0,
+
+      circle: null as L.Circle | null,
+      map: null as Map | null,
+
+      selectionProximity: 4,
+      pointerMoveThreshold: 6,
+      isPointerMoving: false,
+      pointerStartPosition: null as { x: number; y: number } | null,
+
+      // Harvard Observatory
+      timeOfDay: { hours: now.getHours(), minutes: now.getMinutes(), seconds: now.getSeconds() },
+      selectedTime: now.setUTCHours(0, 0, 0, 0),
+      location: {
+        latitudeRad: D2R * 42.3814,
+        longitudeRad: D2R * -71.1281
+      } as LocationRad,
+      locationErrorMessage: ""
+    }
+  },
+
+  created() {
+
+    this.waitForReady().then(() => {
+
+      // This is just nice for hacking while developing
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      window.wwt = this; window.settings = this.wwtSettings;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      window.applyISLSetting = applyImageSetLayerSetting;
+
+      const layerPromises = Object.entries(this.wtml).map(([key, value]) =>
+        this.loadImageCollection({
+          url: value as string,
+          loadChildFolders: false
+        }).then((folder) => {
+          this.imagesetFolder = folder;
+          const children = folder.get_children();
+          if (children == null) { return; }
+          children.forEach((item) => {
+            if (!(item instanceof Place)) { return; }
+            const imageset = item.get_backgroundImageset() ?? item.get_studyImageset();
+            if (imageset === null) { return; }
+            const name = imageset.get_name();
+            this.addImageSetLayer({
+              url: imageset.get_url(),
+              mode: "autodetect",
+              name: name,
+              goto: false
+            }).then((layer) => {
+              this.imagesetLayers[name] = layer;
+              applyImageSetLayerSetting(layer, ["opacity", 0]);
+            });
+        });
+      }));
+      
+
+      this.loadImageCollection({
+        url: this.bgWtml,
+        loadChildFolders: true,
+      });
+      
+      this.backgroundImagesets = [...skyBackgroundImagesets];
+
+      this.getLocation(true);
+      this.setClockSync(false);
+
+      layerPromises.push(this.createTableLayer({
+        name: "Full Weekly",
+        referenceFrame: "Sky",
+        dataCsv: fullWeeklyString
+      }).then((layer) => {
+        layer.set_lngColumn(1);
+        layer.set_latColumn(2);
+        layer.set_markerScale(MarkerScales.screen);
+        this.applyTableLayerSettings({
+          id: layer.id.toString(),
+          settings: [
+            ["scaleFactor", 30],
+            ["color", Color.fromHex(this.ephemerisColor)],
+            ["plotType", PlotTypes.circle],
+            //["sizeColumn", 3],
+            ["opacity", 0.7]
+          ]
+        })
+      }));
+
+      layerPromises.push(this.createTableLayer({
+        name: "2023 Daily",
+        referenceFrame: "Sky",
+        dataCsv: daily2023String
+      }).then((layer) => {
+        layer.set_lngColumn(1);
+        layer.set_latColumn(2);
+        layer.set_markerScale(MarkerScales.screen);
+        this.applyTableLayerSettings({
+          id: layer.id.toString(),
+          settings: [
+            ["scaleFactor", 30],
+            ["color", Color.fromHex(this.ephemerisColor)],
+            //["sizeColumn", 3],
+            ["opacity", 1]
+          ]
+        })
+      }));
+
+      layerPromises.push(this.createTableLayer({
+        name: "Weekly Date Layer",
+        referenceFrame: "Sky",
+        dataCsv: fullWeeklyString
+      }).then((layer) => {
+        layer.set_lngColumn(1);
+        layer.set_latColumn(2);
+        layer.set_markerScale(MarkerScales.screen);
+        this.applyTableLayerSettings({
+          id: layer.id.toString(),
+          settings: [
+            ["scaleFactor", 45],
+            ["color", Color.fromHex(this.todayColor)],
+            ["plotType", PlotTypes.circle],
+            //["sizeColumn", 3],
+            ["startDateColumn", 0],
+            ["endDateColumn", 0],
+            ["timeSeries", true],
+            ["opacity", 1],
+            ["decay", 6]
+          ]
+        });
+      }));
+
+      // layerPromises.push(this.createTableLayer({
+      //   name: "Daily Date Layer",
+      //   referenceFrame: "Sky",
+      //   dataCsv: daily2023String
+      // }).then((layer) => {
+      //   layer.set_lngColumn(1);
+      //   layer.set_latColumn(2);
+      //   this.applyTableLayerSettings({
+      //     id: layer.id.toString(),
+      //     settings: [
+      //       ["scaleFactor", 75],
+      //       ["color", Color.fromHex(this.cometColor)],
+      //       ["sizeColumn", 3],
+      //       ["startDateColumn", 0],
+      //       ["endDateColumn", 0],
+      //       ["timeSeries", true],
+      //       ["opacity", 1],
+      //       ["decay", 1]
+      //     ]
+      //   });
+      // }));
+
+      this.setTime(this.dateTime);
+
+      Promise.all(layerPromises).then(() => {
+        this.layersLoaded = true;
+      });
+
+      this.wwtSettings.set_localHorizonMode(true);
+      this.wwtSettings.set_showAltAzGrid(this.showAltAzGrid);
+      this.wwtSettings.set_showConstellationLabels(this.showConstellations);
+      this.wwtSettings.set_showConstellationFigures(this.showConstellations);
+
+      // This is kinda horrible, but it works!
+
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.wwtControl._drawSkyOverlays = drawSkyOverlays;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      Constellations.initializeConstellationNames = initializeConstellationNames;
+
+      this.updateWWTLocation();
+
+      // wwtZoomDeg is still 0 if we run this here
+      // and it was the same in nextTick
+      // so give just a bit of a delay
+      setTimeout(() => {
+        this.centerOnCurrentDate();
+        this.positionSet = true;
+      }, 100);
+
+    });
+
+  },
+
+  computed: {
+
+    dateTime() {
+      const todSeconds = this.dayFrac * 60 * 60 * 24;
+      return new Date(this.selectedDate.getTime() + 1000 * todSeconds);
+    },
+
+    isLoading(): boolean {
+      return !this.ready;
+    },
+    ready(): boolean {
+      return this.layersLoaded && this.positionSet;
+    },
+    selectedDate(): Date {
+      return new Date(this.selectedTime);
+    },
+    smallSize(): boolean {
+      return this.$vuetify.display.smAndDown;
+    },
+    mobile(): boolean {
+      return this.smallSize && this.touchscreen;
+    },
+    cssVars() {
+      return{
+        '--comet-color': this.cometColor,
+        '--app-content-height': this.showTextSheet ? '60vh' : '100%',
+      };
+    },
+    wwtControl(): WWTControl {
+      return WWTControl.singleton;
+    },
+    wwtRenderContext(): RenderContext {
+      return this.wwtControl.renderContext;
+    },
+    wwtSettings(): Settings {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return Settings.get_active();
+    },
+    dayFrac: {
+      get(): number {
+        const dateForTOD = new Date();
+        dateForTOD.setHours(this.timeOfDay.hours, this.timeOfDay.minutes, this.timeOfDay.seconds);
+        const todSeconds = 3600 * dateForTOD.getUTCHours() + 60 * dateForTOD.getUTCMinutes() + dateForTOD.getUTCSeconds();
+        return todSeconds / (24 * 60 * 60);
+      },
+      set(frac: number) {
+        let seconds = Math.floor(24 * 60 * 60 * frac);
+        const hours = Math.floor(seconds / 3600);
+        seconds -= 60 * 60 * hours;
+        const minutes = Math.floor(seconds / 60);
+        seconds -= 60 * minutes;
+        
+        const d = new Date();
+        d.setUTCHours(hours, minutes, seconds);
+        return { hours: d.getHours(), minutes: d.getMinutes(), seconds: Math.floor(d.getSeconds()) };
+      }
+    },
+    showTextSheet: {
+      get(): boolean {
+        return this.sheet === 'text';
+      },
+      set(_value: boolean) {
+        this.selectSheet('text');
+        this.showTextTooltip = false;
+      }
+    },
+    // altAz() {
+    //   return this.equatorialToHorizontal(this.wwtRARad, this.wwtDecRad, this.location.latitudeRad, this.location.longitudeRad, this.selectedDate || new Date());
+    // }
+  },
+
+  methods: {
+    toLocaleUTCDateString(date: Date) {
+      const timeDiff = date.getTimezoneOffset() * 60000;
+      const adjustedDate = new Date(date.valueOf() + timeDiff);
+      return adjustedDate.toLocaleDateString();
+    },
+    interpolatedTable(table: Table): Table | null {
+      const index = table.findIndex(r => r.date.getTime() === this.selectedTime);
+      if (index === -1) { return null; }
+      const row = table[index];
+      const nextRow = table[index + 1] ?? row;
+      const f = this.dayFrac;
+      const interpolatedRA = (1 - f) * row.ra + f * nextRow.ra;
+      const interpolatedDec = (1 - f) * row.dec + f * nextRow.dec;
+      
+      const interpolatedRow: TableRow = { ...row };
+      interpolatedRow.ra = interpolatedRA;
+      interpolatedRow.dec = interpolatedDec;
+      return Object.assign([interpolatedRow], { columns: table.columns });
+    },
+
+    updateLayersForDate() {
+
+      const interpolatedDailyTable = this.interpolatedTable(daily2023Table);
+      if (this.currentDailyLayer !== null) {
+        this.deleteLayer(this.currentDailyLayer.id);
+        this.currentDailyLayer = null;
+      }
+
+      if (interpolatedDailyTable !== null) {
+        this.createTableLayer({
+          name: "Daily Date Layer",
+          referenceFrame: "Sky",
+          dataCsv: formatCsvTable(interpolatedDailyTable)
+        }).then((layer) => {
+          this.currentDailyLayer = layer;
+          layer.set_lngColumn(1);
+          layer.set_latColumn(2);
+          layer.set_markerScale(MarkerScales.screen);
+          this.applyTableLayerSettings({
+            id: layer.id.toString(),
+            settings: [
+              ["scaleFactor", 50],
+              ["color", Color.fromHex(this.todayColor)],
+              //["sizeColumn", 3],
+              ["opacity", 1],
+            ]
+          });
+        });
+      }
+    },
+
+    closeSplashScreen() {
+      this.showSplashScreen = false;
+    },
+  
+    updateWWTLocation() {
+      this.wwtSettings.set_locationLat(R2D * this.location.latitudeRad);
+      this.wwtSettings.set_locationLng(R2D * this.location.longitudeRad + 90);
+    },
+
+    logLocation() {
+      console.log(this.location.latitudeRad * R2D, this.location.longitudeRad * R2D);
+    },
+    
+    logPosition() {
+      console.log(this.wwtRARad * R2D, this.wwtDecRad * R2D);
+    },
+
+    selectSheet(name: SheetType) {
+      if (this.sheet == name) {
+        this.sheet = null;
+        this.$nextTick(() => {
+          this.blurActiveElement();
+        });
+      } else {
+        this.sheet = name;
+      }
+    },
+
+    setImageSetLayerOrder(layer_id: string, order: number) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.$pinia._s.get("wwt-engine").$wwt.inst.si.setImageSetLayerOrder(layer_id, order)
+    },
+
+    getImageSetLayerIndex(layer: ImageSetLayer): number {
+      // find layer in this.wwtActiveLayers
+      // this.wwtActiveLayers is a dictionary of {0:id1, 1:id2, 2:id3, ...}
+      // get the key item with the value of layer.id
+      for (const [key, value] of Object.entries(this.wwtActiveLayers)) {
+        if (value === layer.id.toString()) {
+          return Number(key);
+        }
+      }
+      return -1;
+    },
+
+    resetLayerOrder() {
+      // reset the layer order to the default
+      // this.wwtActiveLayers is a dictionary of {0:id1, 1:id2, 2:id3, ...}
+      // get the key item with the value of layer.id
+      for (const [key, value] of Object.entries(this.wwtActiveLayers)) {
+        this.setImageSetLayerOrder(value, Number(key));
+      }
+    },
+
+    imageInView(iset: Imageset): boolean {
+      const curRa = this.wwtRARad;
+      const curDec = this.wwtDecRad;
+      const curZoom = this.wwtZoomDeg * D2R;
+      const isetRa = iset.get_centerX() * D2R;
+      const isetDec = iset.get_centerY() * D2R;
+      // check if isetRA, isetDec is within curRa +/- curZoom/2 and curDec +/- curZoom/2
+      return (Math.abs(curRa - isetRa) < curZoom/12) && (Math.abs(curDec - isetDec) < curZoom/12);
+    },
+    
+    onItemSelected(place: Place) {
+      const iset = place.get_studyImageset() ?? place.get_backgroundImageset();
+      if (iset == null) { return; }
+      const layer = this.imagesetLayers[iset.get_name()];
+      this.resetLayerOrder();
+      this.setImageSetLayerOrder(layer.id.toString(), this.wwtActiveLayers.length + 1);
+      const [month, day, year] = iset.get_name().split("/").map(x => parseInt(x));
+      this.selectedTime = Date.UTC(year, month - 1, day);
+
+      // Give time for the selectedTime changes to propagate
+      this.$nextTick(() => {
+        if ((!this.imageInView(iset)) || (this.wwtZoomDeg > 8 * place.get_zoomLevel())) {
+          this.gotoRADecZoom({
+            raRad: D2R * iset.get_centerX(),
+            decRad: D2R * iset.get_centerY(),
+            zoomDeg: place.get_zoomLevel() * 1.7,
+            instant: true
+          });
+        }
+      });
+    },
+
+    updateImageOpacity(place: Place, opacity: number) {
+      const iset = place.get_studyImageset() ?? place.get_backgroundImageset();
+      if (iset == null) { return; }
+      const layer = this.imagesetLayers[iset.get_name()];
+      if (layer == null) { return; }
+      applyImageSetLayerSetting(layer, ["opacity", opacity / 100]);
+    },
+
+    setupLocationSelector() {
+      const locationDeg: [number, number] = [R2D * this.location.latitudeRad, R2D * this.location.longitudeRad];
+      const map = L.map("map-container").setView(locationDeg, 4);
+      // L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      //   maxZoom: 19,
+      //   attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      //   className: 'map-tiles'
+      // }).addTo(map);
+      L.tileLayer('http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',{
+        maxZoom: 20,
+        subdomains:['mt0','mt1','mt2','mt3'],
+        attribution: `&copy <a href="https://www.google.com/maps">Google Maps</a>`,
+        className: 'map-tiles'
+      }).addTo(map);
+
+      this.circle = this.circleForLocation(...locationDeg).addTo(map);
+
+      map.doubleClickZoom.disable();
+      map.on('dblclick', this.onMapSelect);
+      this.map = map;
+    },
+
+    onMapSelect(e: LeafletMouseEvent) {
+      this.location = {
+        latitudeRad: e.latlng.lat * D2R,
+        longitudeRad: e.latlng.lng * D2R
+      };
+    },
+
+    circleForLocation(latDeg: number, lonDeg: number): L.Circle<any> {
+      return L.circle([latDeg, lonDeg], {
+        color: "#FF0000",
+        fillColor: "#FF0033",
+        fillOpacity: 0.5,
+        radius: 200
+      });
+    },
+
+    getLocation(startup = false) {
+      const options = { timeout: 10000, enableHighAccuracy: true };
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.location = {
+            longitudeRad: D2R * position.coords.longitude,
+            latitudeRad: D2R * position.coords.latitude
+          }
+
+          if (this.map) {
+            this.map.setView([position.coords.latitude, position.coords.longitude], this.map.getZoom());
+          }
+        },
+        (_error) => {
+          let msg = "Unable to autodetect location. Location will default to Cambridge, MA, USA, or";
+          if (startup) {
+            msg += "\nuse location selector to manually input a location";
+            this.$notify({
+              group: "startup-location",
+              type: "error",
+              text: msg,
+              duration: 3000
+            });
+          } else {
+            this.locationErrorMessage = msg;
+          }
+          this.updateHorizon();
+        },
+        options
+      );
+    },
+
+    // WWT does have all of this functionality built in
+    // but it doesn't seem to be exposed
+    // We should do that, but for now we just copy the web engine code
+    // https://github.com/Carifio24/wwt-webgl-engine/blob/master/engine/wwtlib/Coordinates.cs
+    altAzToRADec(altRad: number, azRad: number, latRad: number): { ra: number; dec: number; } {
+      azRad = Math.PI - azRad;
+      if (azRad < 0) {
+        azRad += 2 * Math.PI;
+      }
+      let ra = Math.atan2(Math.sin(azRad), Math.cos(azRad) * Math.sin(latRad) + Math.tan(altRad) * Math.cos(latRad));
+      if (ra < 0) {
+        ra += 2 * Math.PI;
+      }
+      const dec = Math.asin(Math.sin(latRad) * Math.sin(altRad) - Math.cos(latRad) * Math.cos(altRad) * Math.cos(azRad));
+      return { ra, dec };
+    },
+
+    get_julian(date: Date): number {
+        return (date.valueOf() / 86400000) - (date.getTimezoneOffset() / 1440) + 2440587.5;
+      },
+  
+    mstFromUTC2(utc: Date, longRad: number): number {
+
+      const lng = longRad * R2D;
+
+      let year = utc.getUTCFullYear();
+      let month = utc.getUTCMonth()+1;
+      const day = utc.getUTCDate();
+      const hour = utc.getUTCHours();
+      const minute = utc.getUTCMinutes();
+      const second = utc.getUTCSeconds() + utc.getUTCMilliseconds() / 1000.0;
+
+      let jan_or_feb = false
+      if (month == 1 || month == 2)
+      {
+          year -= 1;
+          month += 12;
+          jan_or_feb = true
+      } else {
+        jan_or_feb = false;
+      }
+
+      const a = year / 100;
+      const b = 2 - a + Math.floor(a / 4.0);
+      const c = Math.floor(365.25 * year);
+      const d = Math.floor(30.6001 * (month + 1));
+
+      const meeus_julianDays = b + c + d - 730550.5 + day + (hour + minute / 60.00 + second / 3600.00) / 24.00;
+      // const unix_julianDays = this.get_julian(utc) - 2451545.0; // still offset by a small amount
+      // const is_leap_year = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+      // CAUTION: this is a very hacky way to get the correct offset
+      // IT will probably only work for 2022 and 2023, and it uses special numbers
+      const _before_feb_28_2022 = (jan_or_feb) || (month == 14 && day < 28) || (year < 2023);
+      let offset = 0
+      if (_before_feb_28_2022) {
+        offset = - 42.27 / (60 * 24)
+      } else {
+        offset = -28 / (60 * 24)
+      }
+      const julianDays = meeus_julianDays + offset ;
+
+
+      const julianCenturies = julianDays / 36525.0;
+      // this form wants julianDays - 2451545
+      let mst = 280.46061837 + 360.98564736629 * julianDays + 0.000387933 * julianCenturies * julianCenturies - julianCenturies * julianCenturies * julianCenturies / 38710000 + lng;
+
+      if (mst > 0.0) {
+        while (mst > 360.0) {
+          mst = mst - 360.0;
+        }
+      } else {
+        while (mst < 0.0) {
+          mst = mst + 360.0;
+        }
+      }
+
+      return mst;
+    },
+
+    horizontalToEquatorial(altRad: number, azRad: number, latRad: number, longRad: number, utc: Date): EquatorialRad {
+      let hourAngle = this.mstFromUTC2(utc, longRad);
+  
+      const raDec = this.altAzToRADec(altRad, azRad, latRad);
+      const ha = raDec.ra * R2D;
+
+      hourAngle += ha;
+      if (hourAngle < 0) {
+        hourAngle += 360;
+      }
+      if (hourAngle > 360) {
+        hourAngle -= 360;
+      }
+      hourAngle -= 180;
+
+      return { raRad: D2R * hourAngle, decRad: raDec.dec };
+    },
+
+    equatorialToHorizontal(raRad: number, decRad: number, latRad: number, longRad: number, utc: Date): HorizontalRad {
+      let hourAngle = this.mstFromUTC2(utc, longRad) - R2D * raRad;
+      if (hourAngle < 0) {
+        hourAngle += 360;
+      }
+
+      const ha = D2R * hourAngle;
+      const dec = decRad;
+      const lat = latRad;
+      
+      const sinAlt = Math.sin(dec) * Math.sin(lat) + Math.cos(dec) * Math.cos(lat) * Math.cos(ha);
+      const altitude = Math.asin(sinAlt);
+      const cosAz = (Math.sin(dec) - Math.sin(altitude) * Math.sin(lat)) / (Math.cos(altitude) * Math.cos(lat));
+      let azimuth = Math.acos(cosAz);
+
+      azimuth = azimuth + (Math.PI * 80) % (Math.PI * 2);
+
+      if (Math.sin(ha) > 0) {
+        azimuth = 2 * Math.PI - azimuth;
+      }
+      return { altRad: altitude, azRad: azimuth };
+
+    },
+
+    createHorizon(when: Date | null = null) {
+      this.removeHorizon();
+
+      const color = '#01362C';
+      const date = when || this.dateTime || new Date();
+
+      // The initial coordinates are given in Alt/Az, then converted to RA/Dec
+      // Use N annotations to cover below the horizon
+      const N = 6;
+      const delta = 2 * Math.PI / N;
+      for (let i = 0; i < N; i++) {
+        let points: [number, number][] = [
+          [0, i * delta],
+          [-Math.PI / 2, i * delta],
+          [0, (i + 1) * delta]
+        ];
+        points = points.map((point) => {
+          const raDec = this.horizontalToEquatorial(...point, this.location.latitudeRad, this.location.longitudeRad, date);
+          return [R2D * raDec.raRad, R2D * raDec.decRad];
+        });
+        const poly = new Poly();
+        points.forEach(point => poly.addPoint(...point));
+        poly.set_lineColor(color);
+        poly.set_fill(true);
+        poly.set_fillColor(color);
+        this.addAnnotation(poly);
+      }
+
+    },
+
+    closestPoint(
+      point: { x: number; y: number; },
+      threshold?: number
+    ): TableRow | null {
+      const raDecDeg = this.findRADecForScreenPoint(point);
+      const target = { ra: D2R * raDecDeg.ra, dec: D2R * raDecDeg.dec };
+
+      let minDist = Infinity;
+      let closestPt = null as TableRow | null;
+
+      [daily2023Table, fullWeeklyTable].forEach((table) => {
+        table.forEach(row => {
+          const raRad = row.ra * D2R;
+          const decRad = row.dec * D2R;
+
+          const dist = distance(target.ra, target.dec, raRad, decRad);
+          if (dist < minDist) {
+            closestPt = row;
+            minDist = dist;
+          }
+
+        });
+      });
+
+      if (closestPt !== null) {
+        const closestScreenPoint = this.findScreenPointForRADec(closestPt);
+        const pixelDist = Math.sqrt((point.x - closestScreenPoint.x) ** 2 + (point.y - closestScreenPoint.y) ** 2);
+        if (!threshold || pixelDist < threshold) {
+          return closestPt;
+        }
+      }
+      return null;
+    },
+
+    removeHorizon() {
+      this.clearAnnotations();
+    },
+
+    updateLastClosePoint(event: PointerEvent) {
+      const pt = { x: event.offsetX, y: event.offsetY };
+      const closestPt = this.closestPoint(pt, this.selectionProximity);
+      if (closestPt == null && this.lastClosePt == null) {
+        return;
+      }
+      const needsUpdate =
+        closestPt == null ||
+        this.lastClosePt == null ||
+        this.lastClosePt.ra != closestPt.ra ||
+        this.lastClosePt.dec != closestPt.dec;
+      if (needsUpdate) {
+        this.lastClosePt = closestPt;
+      }
+    },
+
+    onPointerMove(event: PointerEvent) {
+      if (!this.isPointerMoving && this.pointerStartPosition !== null) {
+        const dist = Math.sqrt((event.pageX - this.pointerStartPosition.x) ** 2 + (event.pageY - this.pointerStartPosition.y) ** 2);
+        if (dist > this.pointerMoveThreshold) {
+          this.isPointerMoving = true;
+        }
+      }
+
+      this.updateLastClosePoint(event);
+    },
+
+    onPointerDown(event: PointerEvent) {
+      this.isPointerMoving = false;
+      this.pointerStartPosition = { x: event.pageX, y: event.pageY };
+    },
+
+    onPointerUp(event: PointerEvent) {
+      if (!this.isPointerMoving) {
+        this.updateLastClosePoint(event);
+        if (this.lastClosePt !== null) {
+          this.selectedTime = this.lastClosePt.date.getTime();
+        }
+      }
+      this.pointerStartPosition = null;
+      this.isPointerMoving = false;
+    },
+
+    updateViewForDate(instant=true) {
+
+      let position = null as TableRow | null;
+
+      const dailyIndex = dailyDates.findIndex(d => d === this.selectedTime);
+      
+      if (dailyIndex > -1) {
+        position = daily2023Table[dailyIndex];
+        // TODO: Use interpolated point here
+      } else {
+        const weeklyIndex = weeklyDates.findIndex(d => d === this.selectedTime);
+        if (weeklyIndex > -1) {
+          position = fullWeeklyTable[weeklyIndex];
+        }
+      }
+
+      if (position !== null) {
+        this.gotoRADecZoom({
+          raRad: D2R * position.ra,
+          decRad: D2R * position.dec,
+          zoomDeg: this.wwtZoomDeg,
+          rollRad: this.wwtRollRad,
+          instant: instant
+        });
+      }
+
+    },
+    
+    namefromDate(date: Date): string {
+      const year = date.getUTCFullYear();
+      const month = date.getUTCMonth() + 1;
+      const day = date.getUTCDate();
+      return `${month}/${day}/${year}`;
+    },
+
+    matchImageSetName(date: Date): string {
+      // imageset names are keys in this.imagesetLayers
+      const imageset_names = Object.keys(this.imagesetLayers)
+      // loop over image set names. find the name (which is a MM/DD/YYYY date string) 
+      // that is or comes after the date we are looking for
+      
+      for (const name of imageset_names) {
+        // convert the name to a date
+        // if the name is after the date we are looking for, return it
+        const wwt_date_string = this.namefromDate(date)
+        if (name == wwt_date_string) {
+          return name;
+        }
+      }
+      return '';
+    },
+    
+    showImageForDateTime(date: Date) {
+      const name = this.matchImageSetName(date)
+      const imageset_names = Object.keys(this.imagesetLayers)
+      // loop over imageset_names
+      // set opacity for the one with this name to 1, and all others to 0
+      imageset_names.forEach((iname: string) => {
+        const selector = `#items>div>div.bordered.item[title='${iname}']>input`
+        const el = (document.querySelector(selector) as HTMLInputElement)
+        if (iname != name) {
+          applyImageSetLayerSetting(this.imagesetLayers[iname], ['opacity', 0])
+          if (el != null) {
+            el.value = '0'
+        }
+        } else {
+          applyImageSetLayerSetting(this.imagesetLayers[iname], ['opacity', 1])
+          const iset = this.wwtControl.getImagesetByName(iname)
+          if (iset == null) { return; }
+          if (el != null) { el.value = '100' }
+          // this.gotoRADecZoom({
+          //   raRad: D2R * iset.get_centerX(),
+          //   decRad: D2R * iset.get_centerY(),
+          //   zoomDeg: this.wwtZoomDeg,
+          //   instant: true
+          // });
+        }
+      })
+      
+    },
+
+    centerOnCurrentDate() {
+      const now = new Date();
+      this.timeOfDay = { hours: now.getHours(), minutes: now.getMinutes(), seconds: now.getSeconds() };
+      this.selectedTime = now.setUTCHours(0, 0, 0, 0);
+      this.$nextTick(() => {
+        this.updateViewForDate();
+      });
+    },
+
+    updateForDateTime() {
+      this.setTime(this.dateTime);
+      this.updateHorizon(this.dateTime);
+      this.showImageForDateTime(this.dateTime);
+      this.updateViewForDate();
+      this.updateLayersForDate();
+    },
+
+    updateHorizon(when: Date | null = null) {
+      if (this.showHorizon) {
+        this.createHorizon(when);
+      } else {
+        this.removeHorizon();
+      }
+    }
+  },
+
+  watch: {
+    // altAz(coords: { altRad: number; azRad: number }) {
+    //   console.log(coords);
+    //   if (coords.altRad < 0) {
+    //     const pos = this.horizontalToEquatorial(coords.altRad, coords.azRad, this.location.latitudeRad, this.location.longitudeRad, new Date());
+    //     this.gotoRADecZoom({
+    //       raRad: pos.raRad,
+    //       decRad: pos.decRad,
+    //       zoomDeg: this.wwtZoomDeg,
+    //       instant: true
+    //     });
+    //   }
+    // },
+    showAltAzGrid(show: boolean) {
+      this.wwtSettings.set_showAltAzGrid(show);
+    },
+    showConstellations(show: boolean) {
+      this.wwtSettings.set_showConstellationLabels(show);
+      this.wwtSettings.set_showConstellationFigures(show);
+    },
+    showHorizon(_show: boolean) {
+      this.updateHorizon();
+    },
+    timeOfDay(_time: { hours: number; minutes: number; seconds: number }) {
+      this.updateForDateTime();
+    },
+    location(loc: LocationRad) {
+      const now = this.selectedDate;
+      const raDec = this.horizontalToEquatorial(Math.PI/2, 0, loc.latitudeRad, loc.longitudeRad, now);
+
+      if (this.map) {
+        this.circle?.remove();
+
+        const locationDeg: [number, number] = [R2D * loc.latitudeRad, R2D * loc.longitudeRad];
+        this.circle = this.circleForLocation(...locationDeg).addTo(this.map as Map); // Not sure, why, but TS is cranky w/o casting
+      }
+
+      this.updateHorizon();
+      this.updateWWTLocation();
+      // this.gotoRADecZoom({
+      //   raRad: raDec.raRad,
+      //   decRad: raDec.decRad,
+      //   zoomDeg: this.wwtZoomDeg,
+      //   instant: true
+      // });
+    },
+    selectedDate(_date: Date) {
+      this.updateForDateTime();
+    },
+    showLocationSelector(show: boolean) {
+      if (show) {
+        this.locationErrorMessage = "";
+        this.$nextTick(() => {
+          this.setupLocationSelector();
+        });
+      } else {
+        this.map?.remove();
+        this.circle = null;
+      }
+    }
+  }
+});
+
+</script>
+
+<style lang="less">
+html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  overflow: hidden;
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-y: hidden;
+
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+#main-content {
+  position: relative;
+  width: 100%;
+  height: var(--app-content-height);
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+
+  .wwtelescope-component {
+    position: relative;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    border-style: none;
+    border-width: 0;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.modal {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#modal-loading {
+  background-color: #000;
+  .container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    .spinner {
+      background-image: url("../../assets/lunar_loader.gif");
+      background-repeat: no-repeat;
+      background-size: contain;
+      width: 3rem;
+      height: 3rem;
+    }
+    p {
+      margin: 0 0 0 1rem;
+      padding: 0;
+      font-size: 150%;
+    }
+  }
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.control-icon {
+  pointer-events: auto;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.control-icon-wrapper {
+  color: var(--comet-color);
+  background: #040404;
+  padding: 6px;
+  border: 1px solid var(--comet-color);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+#video-icon-wrapper {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.top-content {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: calc(100% - 1rem);
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bottom-content {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: calc(100% - 1rem);
+  pointer-events: none;
+  align-items: center;
+  gap: 5px;
+}
+
+#tools {
+  z-index: 10;
+  color: #fff;
+  width: 100%;
+
+  .opacity-range {
+    width: 50vw;
+  }
+
+  .clickable {
+    cursor: pointer;
+  }
+
+  select {
+    background: white;
+    color: black;
+    border-radius: 3px;
+  }
+}
+
+.tool-container {
+  display: flex;
+  width: 99%;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  pointer-events: auto;
+}
+
+.folder-view {
+  max-height: calc(100% - 150px);
+}
+
+#controls {
+  background: black;
+  padding: 5px;
+  border-radius: 5px;
+  border: solid 1px var(--comet-color);
+  display: flex;
+  flex-direction: column;
+  align-self: flex-end;
+  margin-bottom: 30px;
+  pointer-events: auto;
+
+  .v-label {
+    color: var(--comet-color);
+    opacity: 1;
+  }
+
+  .controls-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+
+    .v-btn {
+      align-self: center;
+      padding-left: 5px;
+      padding-right: 5px;
+      border: solid 1px #899499;
+    }
+
+    .v-btn__content {
+      color: black;
+      font-weight: 900;
+      font-size: 0.75em;
+    }
+  }
+
+  
+
+  #controls-top-row {
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+#show-controls {
+  color: var(--comet-color);
+}
+
+#credits {
+  color: #ddd;
+  font-size: calc(0.7em + 0.2vw);
+  justify-self: flex-end;
+  align-self: flex-end;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  p {
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+  }
+
+  a {
+    text-decoration: none;
+    color: #fff;
+    pointer-events: auto;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &[class^="share-network"]:hover {
+      text-decoration: none;
+      filter: brightness(75%);
+    }
+  }
+
+  img {
+    height: 24px;
+    vertical-align: middle;
+    margin: 2px;
+  }
+
+  svg {
+    vertical-align: middle;
+    height: 24px;
+  }
+}
+
+.ui-text {
+  color: var(--comet-color);
+  background: black;
+  padding: 5px 5px;
+  border: 2px solid black;
+  border-radius: 10px;
+  font-size: calc(0.8em + 0.25vw);
+}
+
+.ui-button {
+  text-align: center;
+  color: var(--comet-color);
+  background: black;
+  padding: 5px 5px;
+  border: 2px solid var(--comet-color);
+  border-radius: 10px;
+  font-size: calc(0.7em + 0.2vw);
+  user-select: none;
+}
+
+.clickable {
+  pointer-events: auto;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+#buttons-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-self: flex-end;
+}
+
+#center-view-button {
+  margin-bottom: 25px;
+}
+
+.bottom-sheet {
+  .v-overlay__content {
+    align-self: flex-end;
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
+    height: 40vh;
+  }
+}
+
+#tabs {
+  width: calc(100% - 3em);
+  align-self: left;
+}
+
+.info-text {
+  height: 35vh;
+  padding-bottom: 25px;
+
+  & a {
+    text-decoration: none;
+  }
+}
+
+.close-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 15;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+.scrollable {
+  overflow-y: auto;
+}
+
+#tab-items {
+  // padding-bottom: 2px !important;
+
+  .v-card-text {
+    font-size: ~"max(14px, calc(0.7em + 0.3vw))";
+    padding-top: ~"max(2vw, 16px)";
+    padding-left: ~"max(4vw, 16px)";
+    padding-right: ~"max(4vw, 16px)";
+
+    .end-spacer {
+      height: 25px;
+    }
+  }
+
+}
+
+#close-text-icon {
+  position: absolute;
+  top: 0.25em;
+  right: calc((3em - 0.6875em) / 3); // font-awesome-icons have width 0.6875em
+  color: white;
+}
+
+#location-dialog {
+  .v-overlay__content {
+    width: fit-content !important;
+  }
+}
+
+#location-selector {
+  align-items: center;
+  margin: auto;
+  width: 70vw;
+  height: fit-content;
+}
+
+#map-container {
+  width: 60vw;
+  height: 70vh;
+  margin: auto;
+  padding: 5px 0px;
+  border-radius: 5px;
+}
+
+// This prevents the tabs from having some extra space to the left when the screen is small
+// (around 400px or less)
+.v-tabs:not(.v-tabs--vertical).v-tabs--right>.v-slide-group--is-overflowing.v-tabs-bar--is-mobile:not(.v-slide-group--has-affixes) .v-slide-group__next, .v-tabs:not(.v-tabs--vertical):not(.v-tabs--right)>.v-slide-group--is-overflowing.v-tabs-bar--is-mobile:not(.v-slide-group--has-affixes) .v-slide-group__prev {
+  display: none;
+}
+
+// Styling the slider
+
+#sliderlabel {
+  padding:3px 5px;
+  margin:0 5px;
+  color:#fff !important;
+  background-color: rgba(214, 4, 147,0.7);
+}
+
+#slider {
+  width: 100% !important;
+  margin: 5px 30px;
+}
+
+.vue-slider-process
+{
+  background-color: white !important;
+}
+
+.vue-slider-dot-tooltip-inner
+{
+  color: white !important;
+  background-color: #9A2976
+ !important;
+  border: 1px solid white !important;
+}
+
+.vue-slider-dot-handle {
+  cursor: pointer;
+  background-color: #9A2976
+ !important;
+  border: 1px solid white !important;
+}
+
+.mark-line {
+  position: absolute;
+  height: 12px;
+  width: 1.25px;
+  margin: 0;
+  background-color: #E5E4E2;
+  transform: translateX(-50%) translateY(calc(-50% + 1px));
+
+  &.tall {
+    height: 20px;
+    background-color: #848884;
+    border: solid 0.5px #E5E4E2;
+  }
+}
+
+.left-content {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  pointer-events: none;
+  height: calc(100% - 2rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+@media(max-width: 600px) {
+  .mark-line {
+    display: none;
+  }
+
+  #location-selector {
+    width: 80vw;
+    height: 85vh;
+  }
+
+  #map-container {
+    width: 70vw;
+  }
+}
+
+
+#splash-overlay {
+  position: fixed;
+  //  vue components are flex, so we can easy center
+  align-items: center;
+  justify-content: center;
+}
+
+
+#splash-screen {
+  // for some reason the view props don't work
+  // for max-width and max-height
+  // splash image size 1908 × 2040 px
+  max-width: calc(min(90vw,1908px)); 
+  max-height: calc(min(90vh,2040px)); 
+  /* prevent the image from being stretched */
+  object-fit: contain;
+}
+
+#splash-close {
+  // outline: 1px solid rgba(255, 255, 255, 0.094);
+  position: absolute;
+  width: 7%;
+  height:8%;
+  top: 4%;
+  left: 80.5%;
+
+  &:hover {
+    cursor: pointer;
+  }
+}
+
+#overlays {
+  margin: 5px;
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+}
+
+ul.text-list {
+  margin-left:1em;
+  margin-top: 0.5em;
+}
+
+div.credits {
+  font-size: 0.8em;
+}
+
+// For styling the time picker
+// See more info here:
+// https://vue3datepicker.com/customization/theming/
+.dp__theme_dark {
+  --dp-background-color: black !important;
+}
+
+.dp__main {
+  width: 175px;
+}
+
+* {
+  --v-input-control-height: 40px;
+}
+
+// :root {
+//   --map-tiles-filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+// }
+
+// @media (prefers-color-scheme: dark) {
+//   .map-tiles {
+//     filter:var(--map-tiles-filter, none);
+//   }
+// }
+
+span.ui-element-ref-comet {
+  background-color: #9A2976; /* #04D6B0; */
+  padding: 0em 0.1em;
+  border-radius: 0.2em;
+}
+
+/* from https://www.smashingmagazine.com/2021/12/create-custom-range-input-consistent-browsers/ */
+input[type="range"] {
+    -webkit-appearance: inherit;
+    -moz-appearance: inherit;
+    appearance: inherit;
+    margin: 5px;
+    --track-height: 0.3em;
+    --thumb-radius: 0.7em;
+    --thumb-color: rgba(205, 54, 157  , 1);
+    --track-color: rgba(4, 147, 214, 0.7);
+    --thumb-border: 1px solid #899499;
+  }
+  
+  
+  
+  input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: inherit;
+      -moz-appearance: inherit;
+      appearance: inherit;
+    width: var(--thumb-radius);
+    height: var(--thumb-radius);
+    margin-top: calc(var(--track-height) / 2 - var(--thumb-radius) / 2);
+    border-radius: 50%;
+    background: var(--thumb-color);
+    border: var(--thumb-border);
+    
+    
+  }
+  
+  input[type="range"]::-moz-range-thumb {
+    -webkit-appearance: inherit;
+    -moz-appearance: inherit;
+    appearance: inherit;
+    width: var(--thumb-radius);
+    height: var(--thumb-radius);
+    margin-top: calc(var(--track-height) / 2 - var(--thumb-radius) / 2);
+    border-radius: 50%;
+    background: var(--thumb-color);
+    cursor: pointer;
+    border: var(--thumb-border)
+  }
+  
+  input[type="range"]::-webkit-slider-runnable-track {
+    background: var(--track-color);
+    /* outline: 1px solid white; */
+    border-radius: calc(var(--track-height) / 2);
+    height: var(--track-height);
+    margin-top: 0;
+  }
+  
+  
+input[type="range"]::-moz-range-track {
+    background: var(--track-color);
+    /* outline: 1px solid white; */
+    border-radius: calc(var(--track-height) / 2);
+    height:var(--track-height);
+    margin-top: 0;
+  }
+  
+#sliderlabel {
+  padding-right: 0.75em;
+  padding-left: 0.5em;
+}
+</style>
