@@ -545,7 +545,7 @@ import { MarkerScales, PlotTypes, Thumbnail } from "@wwtelescope/engine-types";
 import L, { LeafletMouseEvent, Map } from "leaflet";
 import { getTimezoneOffset } from "date-fns-tz";
 import tzlookup from "tz-lookup";
-import { MiniDSBase, BackgroundImageset, skyBackgroundImagesets } from "@minids/common";
+import { MiniDSBase, BackgroundImageset, skyBackgroundImagesets } from "@cosmicds/vue-toolkit";
 
 import { ImageSetLayer, Place } from "@wwtelescope/engine";
 import { applyImageSetLayerSetting } from "@wwtelescope/engine-helpers";

@@ -1,7 +1,6 @@
 import Vue, { createApp } from "vue";
 
-import { IconButton } from "@minids/common";
-import { FundingAcknowledgment } from "@minids/common";
+import { FundingAcknowledgment, IconButton } from "@cosmicds/vue-toolkit";
 import C2022E3 from "./C2022E3.vue";
 import FolderView from "./FolderView.vue";
 import TransitionExpand from "./TransitionExpand.vue";
@@ -61,7 +60,7 @@ import "leaflet/dist/leaflet.css";
 const update = (el: HTMLElement, binding: Vue.DirectiveBinding) => el.style.visibility = (binding.value) ? "hidden" : "";
 
 createApp(C2022E3, {
-  wwtNamespace: "wwt-minids-c2022e3",
+  wwtNamespace: "green-comet-ds",
   wtml: { // images are listed in chronological order earliest to latest
     c2022e3: "https://raw.githubusercontent.com/cosmicds/cds-website/main/public/comet_c2022-e3/C2022_E3.wtml",
   },
