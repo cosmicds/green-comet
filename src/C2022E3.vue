@@ -20,18 +20,51 @@
       :model-value="showSplashScreen"
       absolute
       opacity="0.6"
+      :style="cssVars"
       id="splash-overlay"
     >
-      <img
+    <div
         id="splash-screen"
-        :src="require(`./assets/Green_Comet_Mini_Splashscreen_wVideo.png`)"
         v-click-outside="closeSplashScreen"
-        contain
-      />
-      <a
-        id="splash-close"
-        @click="closeSplashScreen">
-      </a>
+        :style="cssVars"
+      >
+        <div
+          id="first-splash-row"
+      >
+        <div
+            id="close-splash-button"
+            @click="closeSplashScreen"
+            >&times;</div>
+          <div id="splash-screen-text">
+            <p>Want to see how</p>
+            <p>the <span class="highlight">"Green Comet"</span></p>
+            <p>moves in our sky?</p>
+          </div>
+        </div>
+        
+        <div id="splash-screen-guide">
+          <v-row>
+            <v-col cols="12">
+              <font-awesome-icon
+                icon="video"
+              /> Watch the demo 
+            </v-col>
+            <v-col cols="12">
+              <font-awesome-icon
+                icon="book-open"
+              /> Learn more
+            </v-col>
+          </v-row>
+        </div>
+        
+        <div id="splash-screen-acknowledgements">
+          Brought to you by <a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">Cosmic Data Stories</a> and <a href="https://www.worldwidetelescope.org/home/" target="_blank" rel="noopener noreferrer">WorldWide Telescope</a>.
+          
+          <div id="splash-screen-logos">
+            <credit-logos/>
+          </div>
+        </div>
+      </div>
     </v-overlay>
 
     <transition name="fade">
@@ -252,16 +285,16 @@
       <div id="credits" class="ui-text">
         <div id="icons-container">
           <a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer"
-            ><img alt="CosmicDS Logo" src="https://cosmicds.github.io/cds-website/logos/cosmicds_logo_for_dark_backgrounds.png"
+            ><img alt="CosmicDS Logo" src="https://projects.cosmicds.cfa.harvard.edu/cds-website/logos/cosmicds_logo_for_dark_backgrounds.png"
           /></a>
           <a href="https://worldwidetelescope.org/home/" target="_blank" rel="noopener noreferrer"
-            ><img alt="WWT Logo" src="https://cosmicds.github.io/cds-website/logos/logo_wwt.png"
+            ><img alt="WWT Logo" src="https://projects.cosmicds.cfa.harvard.edu/cds-website/logos/logo_wwt.png"
           /></a>
           <a href="https://science.nasa.gov/learners" target="_blank" rel="noopener noreferrer" class="pl-1"
-            ><img alt="SciAct Logo" src="https://cosmicds.github.io/cds-website/logos/logo_sciact.png"
+            ><img alt="SciAct Logo" src="https://projects.cosmicds.cfa.harvard.edu/cds-website/logos/logo_sciact.png"
           /></a>
           <a href="https://nasa.gov/" target="_blank" rel="noopener noreferrer" class="pl-1"
-            ><img alt="SciAct Logo" src="https://cosmicds.github.io/cds-website/logos/NASA_Partner_color_300_no_outline.png"
+            ><img alt="SciAct Logo" src="https://projects.cosmicds.cfa.harvard.edu/cds-website/logos/NASA_Partner_color_300_no_outline.png"
           /></a>
           <!-- <ShareNetwork
             v-for="network in networks"
@@ -394,7 +427,7 @@
                 <br><br><br>
                 <div class="credits">
                 <h3>Credits:</h3>
-                <h4><a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">CosmicDS</a> Mini Stories Team:</h4>
+                <h4><a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">CosmicDS</a> Team:</h4>
                 Jon Carifio<br>
                 John Lewis<br>
                 Pat Udomprasert<br>
@@ -493,7 +526,7 @@
                           </li>
                         </ul>
                       <br>
-                      This Mini Data Story is powered by WorldWide Telescope (WWT).
+                      This Data Story is powered by WorldWide Telescope (WWT).
 
                       </div>
                     </v-col>
@@ -502,7 +535,7 @@
                     <v-col cols="12">
                       <div class="credits">
                       <h3>Credits:</h3>
-                      <h4><a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">CosmicDS</a> Mini Stories Team:</h4>
+                      <h4><a href="https://www.cosmicds.cfa.harvard.edu/" target="_blank" rel="noopener noreferrer">CosmicDS</a> Team:</h4>
                       Jon Carifio<br>
                       John Lewis<br>
                       Pat Udomprasert<br>
@@ -1835,6 +1868,17 @@ export default defineComponent({
 </script>
 
 <style lang="less">
+@font-face {
+  font-family: "Highway Gothic Narrow";
+  src: url("https://projects.cosmicds.cfa.harvard.edu/cds-website/fonts/HighwayGothicNarrow.ttf");
+}
+
+:root {
+  --default-font-size: clamp(0.7rem, min(1.7vh, 1.7vw), 1.1rem);
+  --default-line-height: clamp(1rem, min(2.2vh, 2.2vw), 1.6rem);
+  --time-content-max-width: 700px;
+}
+
 html {
   height: 100%;
   margin: 0;
@@ -1919,7 +1963,7 @@ body {
     align-items: center;
     justify-content: center;
     .spinner {
-      background-image: url("https://cosmicds.github.io/cds-website/misc/lunar_loader.gif");
+      background-image: url("https://projects.cosmicds.cfa.harvard.edu/cds-website/misc/lunar_loader.gif");
       background-repeat: no-repeat;
       background-size: contain;
       width: 3rem;
@@ -2083,6 +2127,17 @@ body {
 #show-controls {
   color: var(--comet-color);
 }
+
+a {
+    text-decoration: none;
+    font-weight: bold;
+    color: #aec2fd; // lighter variant of sky color
+    pointer-events: auto;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 
 #credits {
   color: #ddd;
@@ -2388,33 +2443,125 @@ video {
 
 
 #splash-overlay {
-  position: fixed;
-  //  vue components are flex, so we can easy center
   align-items: center;
   justify-content: center;
+  font-size: min(8vw, 7vh);
 }
-
 
 #splash-screen {
-  // for some reason the view props don't work
-  // for max-width and max-height
-  // splash image size 1908 × 2040 px
-  max-width: calc(min(90vw,1908px)); 
-  max-height: calc(min(90vh,2040px)); 
-  /* prevent the image from being stretched */
-  object-fit: contain;
-}
+  color: #E0E0E0;
 
-#splash-close {
-  // outline: 1px solid rgba(255, 255, 255, 0.094);
-  position: absolute;
-  width: 7%;
-  height: 8%;
-  top: 4%;
-  left: 84%;
+  @media (max-width: 699px) {
+    max-height: 80vh;
+    max-width: 90vw;
+  }
 
-  &:hover {
-    cursor: pointer;
+  @media (min-width: 700px) {
+    max-height: 85vh;
+    max-width: min(70vw, 800px);
+  }
+
+
+  background-color: black;
+  backdrop-filter: blur(5px);
+  justify-content: space-around;
+  align-content: center;
+  padding-top: 4rem;
+  padding-bottom: 1rem;
+
+  border-radius: 10%;
+  border: min(1.2vw, 0.9vh) solid #6facf1;
+  overflow: auto;
+  font-family: 'Highway Gothic Narrow', 'Roboto', sans-serif;
+
+  div {
+    margin-inline: auto;
+    text-align: center;
+  }
+  // make a paragraph inside the div centered horizontally and vertically
+  p {
+    font-family: 'Highway Gothic Narrow', 'Roboto', sans-serif;
+    font-weight: bold;
+    vertical-align: middle;
+  }
+    
+  span.highlight {
+    color: var(--comet-color);
+    text-transform: uppercase;
+    font-weight: bolder;
+  }
+  
+  p.small {
+    font-size: var(--default-font-size);
+    font-weight: bold;
+  }
+
+  #first-splash-row {
+    width: 100%;
+  }
+
+  #close-splash-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 1.75rem;
+    text-align: end;
+    color: var(--comet-color);
+    font-size: min(8vw, 5vh);
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  #splash-screen-text {
+    // in the grid, the text is in the 2nd column
+    display: flex;
+    flex-direction: column;
+    line-height: 130%;
+    
+  }
+
+  #splash-screen-guide {
+    margin-block: 1.5em;
+    font-size: min(5vw, 4vh);
+    line-height: 140%;
+    width: 75%;
+
+    .v-col{
+      padding: 0;
+    }
+    
+    .svg-inline--fa {
+      color:var(--comet-color);
+      margin: 0 10px;
+    }
+  }
+
+  #splash-screen-acknowledgements {
+    font-size: calc(1.7 * var(--default-font-size));
+    line-height: calc(1.5 * var(--default-line-height));
+    width: 60%; 
+  }
+
+  #splash-screen-logos {
+    margin-block: 0.75em;
+
+    img {
+    height: 5vmin;
+    vertical-align: middle;
+    margin: 2px;
+    }
+
+    @media only screen and (max-width: 600px) {
+      img {
+        height: 24px;
+      }
+    }
+
+    svg {
+      vertical-align: middle;
+      height: 24px;
+    }
   }
 }
 

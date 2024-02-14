@@ -1,6 +1,6 @@
 import Vue, { createApp } from "vue";
 
-import { FundingAcknowledgment, IconButton } from "@cosmicds/vue-toolkit";
+import { FundingAcknowledgment, IconButton, CreditLogos } from "@cosmicds/vue-toolkit";
 import C2022E3 from "./C2022E3.vue";
 import FolderView from "./FolderView.vue";
 import TransitionExpand from "./TransitionExpand.vue";
@@ -64,8 +64,8 @@ createApp(C2022E3, {
   wtml: { // images are listed in chronological order earliest to latest
     c2022e3: "https://raw.githubusercontent.com/cosmicds/cds-website/main/public/comet_c2022-e3/C2022_E3.wtml",
   },
-  url: "https://web.wwtassets.org/specials/2023/cosmicds-carina/",
-  thumbnailUrl: "https://cdn.worldwidetelescope.org/thumbnails/jwst.jpg",
+  url: "https://projects.cosmicds.cfa.harvard.edu/green-comet/",
+  thumbnailUrl: "https://github.com/cosmicds/cds-website/raw/main/public/comet_c2022-e3/thumbnails/687_2022E3_18_12.jpg",
   bgWtml: "https://data1.wwtassets.org/packages/2022/07_jwst/smacs0723/jwst_smacs0723.wtml",
   bgName: "unwise"
 })
@@ -101,6 +101,7 @@ createApp(C2022E3, {
   .component('date-picker', Datepicker)
   .component('icon-button', IconButton)
   .component('funding-acknowledgment', FundingAcknowledgment)
+  .component('credit-logos', CreditLogos)  
 
   // Mount
   .mount("#app");
