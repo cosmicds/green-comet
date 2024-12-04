@@ -23,38 +23,38 @@
       :style="cssVars"
       id="splash-overlay"
     >
-    <div
+      <div
         id="splash-screen"
         v-click-outside="closeSplashScreen"
         :style="cssVars"
       >
         <div
           id="first-splash-row"
-      >
-        <div
+        >
+          <font-awesome-icon
             id="close-splash-button"
             @click="closeSplashScreen"
-            >&times;</div>
+            icon="xmark"
+          />
           <div id="splash-screen-text">
             <p>Want to see how</p>
             <p>the <span class="highlight">"Green Comet"</span></p>
             <p>moves in our sky?</p>
           </div>
         </div>
-        
-        <div id="splash-screen-guide">
-          <v-row>
-            <v-col cols="12">
-              <font-awesome-icon
-                icon="video"
-              /> Watch the demo 
-            </v-col>
-            <v-col cols="12">
-              <font-awesome-icon
-                icon="book-open"
-              /> Learn more
-            </v-col>
-          </v-row>
+
+        <div>
+          <v-btn
+            class="splash-get-started"
+            @click="closeSplashScreen"
+            :color="accentColor"
+            :density="xSmallSize ? 'compact' : 'default'"
+            size="x-large"
+            variant="elevated"
+            rounded="lg"
+          >
+            Get Started
+          </v-btn>
         </div>
         
         <div id="splash-screen-acknowledgements">
@@ -936,6 +936,11 @@ export default defineComponent({
     smallSize(): boolean {
       return this.$vuetify.display.smAndDown;
     },
+
+    xSmallSize(): boolean {
+      return this.$vuetify.display.xs;
+    },
+
     mobile(): boolean {
       return this.smallSize && this.touchscreen;
     },
@@ -2469,7 +2474,7 @@ video {
   padding-top: 4rem;
   padding-bottom: 1rem;
 
-  border-radius: 10%;
+  border-radius: 30px;
   border: min(1.2vw, 0.9vh) solid #6facf1;
   overflow: auto;
   font-family: 'Highway Gothic Narrow', 'Roboto', sans-serif;
@@ -2502,11 +2507,11 @@ video {
 
   #close-splash-button {
     position: absolute;
-    top: 0.5rem;
-    right: 1.75rem;
+    top: 20px;
+    right: 20px;
     text-align: end;
     color: var(--comet-color);
-    font-size: min(8vw, 5vh);
+    font-size: min(5vw, 4vh);
 
     &:hover {
       cursor: pointer;
@@ -2519,6 +2524,14 @@ video {
     flex-direction: column;
     line-height: 130%;
     
+  }
+
+  .splash-get-started {
+    border: 2px solid white;
+    font-size: calc(1.8 * var(--default-font-size));
+    margin-top: 5%;
+    margin-bottom: 2%;
+    font-weight: bold !important;
   }
 
   #splash-screen-guide {
@@ -2538,6 +2551,7 @@ video {
   }
 
   #splash-screen-acknowledgements {
+    margin-top: 3rem;
     font-size: calc(1.7 * var(--default-font-size));
     line-height: calc(1.5 * var(--default-line-height));
     width: 60%; 
