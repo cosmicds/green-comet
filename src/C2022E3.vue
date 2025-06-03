@@ -934,10 +934,14 @@ export default defineComponent({
       return new Date(this.selectedTime);
     },
     smallSize(): boolean {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       return this.$vuetify.display.smAndDown;
     },
 
     xSmallSize(): boolean {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       return this.$vuetify.display.xs;
     },
 
