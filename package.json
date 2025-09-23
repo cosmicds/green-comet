@@ -2,7 +2,7 @@
   "name": "@cosmicds/green-comet",
   "version": "0.0.0",
   "dependencies": {
-    "@cosmicds/vue-toolkit": "^0.1.5",
+    "@cosmicds/vue-toolkit": "~0.2.3",
     "@kyvg/vue3-notification": "^2.8.0",
     "@vuepic/vue-datepicker": "^3.6.5",
     "@wwtelescope/astro": "^0.2.2",
