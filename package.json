@@ -11,6 +11,7 @@
     "date-fns-tz": "^2.0.0",
     "leaflet": "^1.9.3",
     "tz-lookup": "^6.1.25",
+    "uuid": "^13.0.0",
     "vue": "^3",
     "vue-slider-component": "next",
     "vuetify": "^3.1.1",
