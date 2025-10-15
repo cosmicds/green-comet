@@ -168,10 +168,10 @@
   resolved "https://registry.yarnpkg.com/@colors/colors/-/colors-1.5.0.tgz#bb504579c1cae923e6576a4f5da43d25f97bdbd9"
   integrity sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==
 
-"@cosmicds/vue-toolkit@~0.2.3":
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/@cosmicds/vue-toolkit/-/vue-toolkit-0.2.3.tgz#c5545cbf1e8ec72c79d2cb84a797d5af1c476ab0"
-  integrity sha512-U3JLNk80b+F1lCehyJcgSK0B/VIBMszDUU3f2pXTjHn12usd39TD0FHZxUyRpYl3RGpmo9A5gYxsxgbx17PPsg==
+"@cosmicds/vue-toolkit@~0.2.5":
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/@cosmicds/vue-toolkit/-/vue-toolkit-0.2.5.tgz#69a24682f9ccae2e2460f41b8fa5ba51bf764ef1"
+  integrity sha512-iz4xeVfwav81rea6F7OskW2DhQYf4Ega52lNNPd4vvTYJ7IGjm2HDMHD52SfmiKMkAVVuEJOkRSmb600WQSUqg==
   dependencies:
     "@fortawesome/fontawesome-svg-core" "^6.5.1"
     "@fortawesome/free-solid-svg-icons" "^6.5.1"
