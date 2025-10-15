@@ -1,6 +1,6 @@
 import Vue, { createApp } from "vue";
 
-import { FundingAcknowledgment, IconButton, CreditLogos } from "@cosmicds/vue-toolkit";
+import { FundingAcknowledgment, IconButton, CreditLogos, UserExperience } from "@cosmicds/vue-toolkit";
 import C2022E3 from "./C2022E3.vue";
 import FolderView from "./FolderView.vue";
 import TransitionExpand from "./TransitionExpand.vue";
@@ -101,7 +101,8 @@ createApp(C2022E3, {
   .component('date-picker', Datepicker)
   .component('icon-button', IconButton)
   .component('funding-acknowledgment', FundingAcknowledgment)
-  .component('credit-logos', CreditLogos)  
+  .component('credit-logos', CreditLogos)
+  .component('user-experience', UserExperience)
 
   // Mount
   .mount("#app");
