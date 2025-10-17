@@ -554,6 +554,41 @@
       </v-card>
     </v-dialog>
 
+    <v-container>
+      <v-expand-transition>
+        <user-experience
+          v-if="showRating"
+          :question="question"
+          icon-size="3x"
+          @dismiss="(_rating: UserExperienceRating | null, _comments: string | null) => {
+            showRating = false;
+          }"
+          @rating="(rating: UserExperienceRating | null) => {
+            currentRating = rating;
+            updateUserExperienceInfo(currentRating, currentComments);
+          }"
+          @finish="(rating: UserExperienceRating | null, comments: string | null) => {
+            currentRating = rating;
+            currentComments = comments;
+            updateUserExperienceInfo(currentRating, currentComments);
+            showRating = false;
+          }"
+        >
+          <template #footer>
+            <v-btn
+              class="privacy-button"
+              color="#BDBDBD"
+              href="https://www.cfa.harvard.edu/privacy-statement"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+            Privacy Policy
+            </v-btn>
+          </template>
+        </user-experience>
+      </v-expand-transition>
+    </v-container>
+
     <notifications group="startup-location" position="top right" />
 
   </div>
@@ -571,7 +606,8 @@ import { MarkerScales, PlotTypes, Thumbnail } from "@wwtelescope/engine-types";
 import L, { LeafletMouseEvent, Map } from "leaflet";
 import { getTimezoneOffset } from "date-fns-tz";
 import tzlookup from "tz-lookup";
-import { MiniDSBase, BackgroundImageset, skyBackgroundImagesets } from "@cosmicds/vue-toolkit";
+import { v4 } from "uuid";
+import { API_BASE_URL, MiniDSBase, BackgroundImageset, skyBackgroundImagesets, type UserExperienceRating } from "@cosmicds/vue-toolkit";
 
 import { ImageSetLayer, Place } from "@wwtelescope/engine";
 import { applyImageSetLayerSetting } from "@wwtelescope/engine-helpers";
@@ -699,6 +735,8 @@ export default defineComponent({
   },
   data() {
     const now = new Date();
+    const maybeUUID = window.localStorage.getItem("cds-green-comet-uuid");
+    const uuid = maybeUUID ?? v4();
     return {
       showSplashScreen: true,
       imagesetLayers: {} as Record<string, ImageSetLayer>,
@@ -756,7 +794,16 @@ export default defineComponent({
         latitudeRad: D2R * 42.3814,
         longitudeRad: D2R * -71.1281
       } as LocationRad,
-      locationErrorMessage: ""
+      locationErrorMessage: "",
+
+      showRating: false,
+      storyRatingUrl: `${API_BASE_URL}/green-comet/user-experience`,
+      uuid,
+      currentRating: null as UserExperienceRating | null,
+      currentComments: null as string | null,
+      question: Math.random() > 0.5 ?
+        "Does this spark your curiosity?" :
+        "Are you learning something new?",
     };
   },
 
@@ -901,6 +948,8 @@ export default defineComponent({
         this.centerOnCurrentDate();
         this.positionSet = true;
       }, 100);
+
+      this.ratingDisplaySetup();
 
     });
 
@@ -1747,7 +1796,51 @@ export default defineComponent({
       if (children == null) { return; }
       const place = children[0] as Place;
       this.onItemSelected(place);
-    }
+    },
+
+    async ratingDisplaySetup() {
+      const existsResponse = await fetch(`${this.storyRatingUrl}/${this.uuid}`, {
+        method: "GET",
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        headers: { "Authorization": process.env.VUE_APP_CDS_API_KEY ?? "" }
+      });
+
+      // NB: If we want to ask multiple questions, this logic can be adjusted
+      const existsContent = await existsResponse.json();
+      const exists = existsResponse.status === 200 && existsContent.ratings?.length > 0;
+
+      if (exists) {
+        return;
+      }
+
+      setTimeout(() => {
+        this.showRating = true;
+      }, 30_000);
+    },
+
+    updateUserExperienceInfo(rating: UserExperienceRating | null, comments: string | null) {
+      const body: Record<string, unknown> = {
+        uuid: this.uuid,
+        question: this.question,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        story_name: "green-comet",
+      };
+      if (rating) {
+        body.rating = rating;
+      }
+      if (comments) {
+        body.comments = comments;
+      }
+      fetch(this.storyRatingUrl, {
+        method: "PUT",
+        headers: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          "Authorization": process.env.VUE_APP_CDS_API_KEY ?? "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+    },
   },
 
   watch: {
@@ -2699,4 +2792,68 @@ input[type="range"]::-moz-range-track {
     margin-top: 0;
     padding: 0 calc((var(--track-height) - var(--thumb-radius))/2);
   }
+
+.rating-root {
+  position: absolute !important;
+  right: 5px;
+  bottom: 0;
+  padding: 5px;
+  width: fit-content !important;
+  // left: 50%;
+  // transform: translateX(-50%);
+  gap: 0 !important;
+  border: solid 1px #EFEFEF !important;
+  border-radius: 10px !important;
+  background-color: #222222 !important;
+  opacity: 0.95 !important;
+  z-index: 20000;
+
+  .rating-title {
+    color: #EFEFEF;
+    font-size: var(--default-font-size);
+  }
+
+  .rating-icon-row {
+    
+    padding: 0px;
+
+    .svg-inline--fa {
+      height: 30px;
+    }
+  }
+
+  .comments-box {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .v-card-text {
+    padding-bottom: 0;
+  }
+
+  .v-card-actions {
+    padding: 0;
+  }
+
+  .privacy-button {
+    font-size: 10px;
+    position: absolute;
+    left: 5px;
+  }
+
+  .v-btn.bg-success {
+    position: absolute;
+    right: 5px;
+  }
+
+  .close-button {
+    position: absolute !important;
+    color: white !important;
+  }
+
+  .v-field--variant-filled .v-field__outline:before, .v-field--variant-underlined .v-field__outline:before, 
+  .v-field--variant-filled .v-field__outline:after, .v-field--variant-underlined .v-field__outline:after {
+    border-style: none !important;
+  }
+}
 </style>
