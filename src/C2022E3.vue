@@ -575,27 +575,32 @@
           }"
         >
           <template #footer>
-            <v-btn
-              class="rating-opt-put"
-              color="#BDBDBD"
-              size="small"
-              variant="text"
-              @click="onOptOutClicked"
-            >
-            Don't show again
-            </v-btn>
-            <v-btn
-              class="privacy-button"
-              color="#BDBDBD"
-              href="https://www.cfa.harvard.edu/privacy-statement"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-            Privacy Policy
-            </v-btn>
+            <div id="user-experience-footer" class="mt-4">
+              <v-btn
+                class="rating-opt-put"
+                color="#BDBDBD"
+                size="small"
+                variant="text"
+                @click="onOptOutClicked"
+              >
+              Don't show again
+              </v-btn>
+              <v-btn
+                class="privacy-button"
+                color="#BDBDBD"
+                size="small"
+                @click="showPrivacyPolicy = true"
+                @keyup.enter="showPrivacyPolicy = true"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+              What is this?
+              </v-btn>
+            </div>
           </template>
         </user-experience>
       </v-expand-transition>
+      <cds-privacy-policy v-model="showPrivacyPolicy" />
     </v-container>
 
     <notifications group="startup-location" position="top right" />
@@ -810,6 +815,7 @@ export default defineComponent({
       storyRatingUrl: `${API_BASE_URL}/green-comet/user-experience`,
       uuid,
       ratingOptedOut,
+      showPrivacyPolicy: false,
       currentRating: null as UserExperienceRating | null,
       currentComments: null as string | null,
       question: Math.random() > 0.5 ?
@@ -2855,16 +2861,11 @@ input[type="range"]::-moz-range-track {
   .v-card-actions {
     padding: 0;
   }
-
-  .privacy-button {
-    font-size: 10px;
-    position: absolute;
-    left: 5px;
-  }
-
-  .v-btn.bg-success {
-    position: absolute;
-    right: 5px;
+  
+  #user-experience-footer {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
   }
 
   .close-button {
