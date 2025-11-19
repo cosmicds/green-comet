@@ -576,6 +576,15 @@
         >
           <template #footer>
             <v-btn
+              class="rating-opt-put"
+              color="#BDBDBD"
+              size="small"
+              variant="text"
+              @click="onOptOutClicked"
+            >
+            Don't show again
+            </v-btn>
+            <v-btn
               class="privacy-button"
               color="#BDBDBD"
               href="https://www.cfa.harvard.edu/privacy-statement"
@@ -737,6 +746,7 @@ export default defineComponent({
     const now = new Date();
     const maybeUUID = window.localStorage.getItem("cds-green-comet-uuid");
     const uuid = maybeUUID ?? v4();
+    const ratingOptedOut = window.localStorage.getItem("cds-green-comet-rating-optout")?.toLowerCase() === "true";
     return {
       showSplashScreen: true,
       imagesetLayers: {} as Record<string, ImageSetLayer>,
@@ -799,6 +809,7 @@ export default defineComponent({
       showRating: false,
       storyRatingUrl: `${API_BASE_URL}/green-comet/user-experience`,
       uuid,
+      ratingOptedOut,
       currentRating: null as UserExperienceRating | null,
       currentComments: null as string | null,
       question: Math.random() > 0.5 ?
@@ -1799,6 +1810,10 @@ export default defineComponent({
     },
 
     async ratingDisplaySetup() {
+      if (this.ratingOptedOut) {
+        return;
+      }
+      
       const existsResponse = await fetch(`${this.storyRatingUrl}/${this.uuid}`, {
         method: "GET",
         // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -1840,6 +1855,12 @@ export default defineComponent({
         },
         body: JSON.stringify(body),
       });
+    },
+    
+    onOptOutClicked() {
+      this.showRating = false;
+      this.ratingOptedOut = true;
+      window.localStorage.setItem("cds-green-comet-rating-optout", "true");
     },
   },
 
