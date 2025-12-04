@@ -4,6 +4,7 @@ import { FundingAcknowledgment, IconButton, CreditLogos, UserExperience } from "
 import C2022E3 from "./C2022E3.vue";
 import FolderView from "./FolderView.vue";
 import TransitionExpand from "./TransitionExpand.vue";
+import CDSPrivacyPolicy from "./CDSPrivacyPolicy.vue";
 
 import "./polyfills";
 
@@ -103,6 +104,7 @@ createApp(C2022E3, {
   .component('funding-acknowledgment', FundingAcknowledgment)
   .component('credit-logos', CreditLogos)
   .component('user-experience', UserExperience)
+  .component('cds-privacy-policy', CDSPrivacyPolicy)
 
   // Mount
   .mount("#app");
