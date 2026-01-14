@@ -36,7 +36,7 @@
     "@vue/eslint-config-typescript": "^11.0.2",
     "browserstack-local": "^1.5.5",
     "chai": "^4.3.7",
-    "chromedriver": "^128",
+    "chromedriver": "^143",
     "edgedriver": "^5.3.9",
     "eslint": "^8.31.0",
     "eslint-plugin-vue": "^9.8.0",
