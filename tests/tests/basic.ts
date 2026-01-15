@@ -22,9 +22,10 @@ const tests: GreenCometTests = {
 
   app: null as unknown as (EnhancedPageObject & GreenCometPage),
   sections: null as unknown as GreenCometSections,
+  driver: null as unknown as WebDriver,
 
   before: function(browser: NightwatchBrowser): void {
-    browser.globals.waitForConditionTimeout = 30000;
+    browser.globals.waitForConditionTimeout = 30_000;
     this.app = browser.page.GreenComet();
     this.sections = this.app.section as GreenCometSections;
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -75,29 +76,6 @@ const tests: GreenCometTests = {
     await folderView.expect.elements("@folderItem").count.to.equal(folderView.props.folderImageCount);
     await folderView.expect.element("@expandHeader").text.to.match(folderView.props.expandedHeaderText);
     await folderView.expect.element("@expandChevron").to.have.attribute("data-icon", "chevron-up");
-
-    const controls = this.sections.controls;
-    await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "chevron-down");
-    await controls.expect.element("@gridInput").to.be.selected;
-    await controls.expect.element("@constellationsInput").to.not.be.selected;
-    await controls.expect.element("@horizonInput").to.not.be.selected; 
-
-    await controls.expect.element("@selectedLocationTimeLabel").text.to.match(controls.props.selectedLocationTimeText);
-    await controls.expect.element("@centerOnNowButtonContent").text.to.match(controls.props.centerOnNowText);
-    await controls.expect.element("@playCometImagesContent").text.to.match(controls.props.playCometImagesText);
-
-    await expectAllVisible(controls, [
-      "@topRow", "@openCloseButton",
-      "@gridCheckbox", "@constellationsCheckbox", "@horizonCheckbox",
-      "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
-      "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
-    ]);
-
-    await percyScreenshot(this.driver, "Controls open");
-
-    await controls.click("@openCloseButton");
-
-    await percyScreenshot(this.driver, "Controls closed");
   },
 
   'Open video': async function() {
@@ -180,34 +158,68 @@ const tests: GreenCometTests = {
     await percyScreenshot(this.driver, "Location selector closed");
   },
 
-  'Folder View': async function() {
+  'Folder View': async function(browser: NightwatchBrowser) {
     const folderView = this.sections.folderView;
-    await folderView.click("@expandRow");
+
+    const shouldStartOpen = !browser.isMobile();
+    if (shouldStartOpen) {
+      await folderView.expect.elements("@folderItem").count.to.equal(folderView.props.folderImageCount);
+      await folderView.expect.element("@expandHeader").text.to.match(folderView.props.expandedHeaderText);
+      await folderView.expect.element("@expandChevron").to.have.attribute("data-icon", "chevron-up");
+      await folderView.click("@expandRow");
+    }
+
     await folderView.expect.elements("@folderItem").count.to.equal(0);
     await folderView.expect.element("@expandHeader").text.to.match(folderView.props.contractedHeaderText);
     await folderView.expect.element("@expandChevron").to.have.attribute("data-icon", "chevron-down");
 
-    await percyScreenshot(this.driver, "Folder view open");
+    await percyScreenshot(this.driver, "Folder view closed");
 
     await folderView.click("@expandRow");
     await folderView.expect.elements("@folderItem").count.to.equal(folderView.props.folderImageCount);
     await folderView.expect.element("@expandHeader").text.to.match(folderView.props.expandedHeaderText);
     await folderView.expect.element("@expandChevron").to.have.attribute("data-icon", "chevron-up");
 
-    await percyScreenshot(this.driver, "Folder view closed");
+    await percyScreenshot(this.driver, "Folder view open");
   },
 
-  'Control Panel': async function() {
+  'Control Panel': async function(browser: NightwatchBrowser) {
     const controls = this.sections.controls;
 
-    await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "gear");
-    await expectAllNotPresent(controls, [
-      "@gridInput", "@constellationsInput", "@horizonInput",
+    const shouldControlsBeOpen = !browser.isMobile();
+    if (!shouldControlsBeOpen) {
+      await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "gear");
+      await expectAllNotPresent(controls, [
+        "@gridInput", "@constellationsInput", "@horizonInput",
+        "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
+        "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
+      ]);
+
+      await controls.click("@openCloseButton");
+    }
+
+    await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "chevron-down");
+    await controls.expect.element("@gridInput").to.be.selected;
+    await controls.expect.element("@constellationsInput").to.not.be.selected;
+    await controls.expect.element("@horizonInput").to.not.be.selected;
+
+    await controls.expect.element("@selectedLocationTimeLabel").text.to.match(controls.props.selectedLocationTimeText);
+    await controls.expect.element("@centerOnNowButtonContent").text.to.match(controls.props.centerOnNowText);
+    await controls.expect.element("@playCometImagesContent").text.to.match(controls.props.playCometImagesText);
+
+    await expectAllVisible(controls, [
+      "@topRow", "@openCloseButton",
+      "@gridCheckbox", "@constellationsCheckbox", "@horizonCheckbox",
       "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
       "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
     ]);
 
+    await percyScreenshot(this.driver, "Controls open");
+
     await controls.click("@openCloseButton");
+
+    await percyScreenshot(this.driver, "Controls closed");
+
     await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "chevron-down");
     await expectAllVisible(controls, [
       "@topRow", "@openCloseButton",
