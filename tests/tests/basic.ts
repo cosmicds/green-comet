@@ -194,6 +194,7 @@ const tests: GreenCometTests = {
         "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
         "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
       ]);
+      await controls.expect.element("@topRow").to.not.visible;
 
       await controls.click("@openCloseButton");
     }
@@ -219,11 +220,12 @@ const tests: GreenCometTests = {
     await controls.click("@openCloseButton");
     await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "chevron-down");
     await expectAllNotPresent(controls, [
-      "@topRow", "@openCloseButton",
-      "@gridCheckbox", "@constellationsCheckbox", "@horizonCheckbox",
+      "@openCloseButton", "@gridCheckbox",
+      "@constellationsCheckbox", "@horizonCheckbox",
       "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
       "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
     ]);
+    await controls.expect.element("@topRow").to.not.visible;
 
     await percyScreenshot(this.driver, "Control panel closed");
   },
