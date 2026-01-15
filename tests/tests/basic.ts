@@ -214,20 +214,6 @@ const tests: GreenCometTests = {
       "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
     ]);
 
-    await percyScreenshot(this.driver, "Controls open");
-
-    await controls.click("@openCloseButton");
-
-    await percyScreenshot(this.driver, "Controls closed");
-
-    await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "chevron-down");
-    await expectAllVisible(controls, [
-      "@topRow", "@openCloseButton",
-      "@gridCheckbox", "@constellationsCheckbox", "@horizonCheckbox",
-      "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
-      "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
-    ]);
-
     await percyScreenshot(this.driver, "Control panel open");
 
     await controls.click("@openCloseButton");
