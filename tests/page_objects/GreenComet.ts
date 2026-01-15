@@ -47,7 +47,10 @@ const greenCometElements = {
   },
   infoSheet: {
     selector: "#text-bottom-sheet"
-  }
+  },
+  userExperience: {
+    selector: ".rating-root",
+  },
 };
 
 const topContent = {
@@ -137,7 +140,7 @@ const controls = {
       selector: "#controls-top-row"
     },
     openCloseButton: {
-      selector: ".svg-inline--fa"
+      selector: ".svg-inline--fa[class*=fa-chevron]"
     },
     optionCheckbox: {
       selector: ".v-checkbox"
@@ -267,6 +270,15 @@ const infoSheet = {
   }
 };
 
+const userExperience = {
+  elements: {
+    closeButton: {
+      selector: "i.mdi-close",
+    },
+  },
+};
+
+
 const greenCometSections = {
   topContent: {
     selector: ".top-content",
@@ -299,6 +311,10 @@ const greenCometSections = {
   folderView: {
     selector: ".folder-view",
     ...folderView
+  },
+  userExperience: {
+    selector: ".rating-root",
+    ...userExperience,
   }
 };
 
