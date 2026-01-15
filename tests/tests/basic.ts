@@ -169,7 +169,6 @@ const tests: GreenCometTests = {
       await folderView.click("@expandRow");
     }
 
-    await folderView.click("@expandRow");
     await folderView.expect.elements("@folderItem").count.to.equal(0);
     await folderView.expect.element("@expandHeader").text.to.match(folderView.props.contractedHeaderText);
     await folderView.expect.element("@expandChevron").to.have.attribute("data-icon", "chevron-down");
