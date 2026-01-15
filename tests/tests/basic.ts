@@ -25,7 +25,7 @@ const tests: GreenCometTests = {
   driver: null as unknown as WebDriver,
 
   before: function(browser: NightwatchBrowser): void {
-    browser.globals.waitForConditionTimeout = 30000;
+    browser.globals.waitForConditionTimeout = 30_000;
     this.app = browser.page.GreenComet();
     this.sections = this.app.section as GreenCometSections;
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -201,7 +201,7 @@ const tests: GreenCometTests = {
   'Control Panel': async function() {
     const controls = this.sections.controls;
 
-    const shouldControlsBeOpen = browser.isMobile;
+    const shouldControlsBeOpen = !browser.isMobile();
     if (!shouldControlsBeOpen) {
       await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "gear");
       await expectAllNotPresent(controls, [
