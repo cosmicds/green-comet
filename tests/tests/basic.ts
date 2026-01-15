@@ -22,6 +22,7 @@ const tests: GreenCometTests = {
 
   app: null as unknown as (EnhancedPageObject & GreenCometPage),
   sections: null as unknown as GreenCometSections,
+  driver: null as unknown as WebDriver,
 
   before: function(browser: NightwatchBrowser): void {
     browser.globals.waitForConditionTimeout = 30000;
@@ -200,14 +201,18 @@ const tests: GreenCometTests = {
   'Control Panel': async function() {
     const controls = this.sections.controls;
 
-    await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "gear");
-    await expectAllNotPresent(controls, [
-      "@gridInput", "@constellationsInput", "@horizonInput",
-      "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
-      "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
-    ]);
+    const shouldControlsBeOpen = browser.isMobile;
+    if (!shouldControlsBeOpen) {
+      await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "gear");
+      await expectAllNotPresent(controls, [
+        "@gridInput", "@constellationsInput", "@horizonInput",
+        "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
+        "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
+      ]);
 
-    await controls.click("@openCloseButton");
+      await controls.click("@openCloseButton");
+    }
+
     await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "chevron-down");
     await expectAllVisible(controls, [
       "@topRow", "@openCloseButton",
