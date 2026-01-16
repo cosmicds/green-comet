@@ -76,6 +76,10 @@ const tests: GreenCometTests = {
     await folderView.expect.elements("@folderItem").count.to.equal(folderView.props.folderImageCount);
     await folderView.expect.element("@expandHeader").text.to.match(folderView.props.expandedHeaderText);
     await folderView.expect.element("@expandChevron").to.have.attribute("data-icon", "chevron-up");
+
+    await this.app.waitForElementVisible("@userExperience", 30_000);
+    await this.sections.userExperience.click("@closeButton");
+    await this.app.expect.element("@userExperience").to.not.be.present;
   },
 
   'Open video': async function() {
@@ -194,7 +198,7 @@ const tests: GreenCometTests = {
         "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
         "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
       ]);
-      await controls.expect.element("@topRow").to.not.visible;
+      await expectAllVisible(controls, ["@topRow", "@openCloseButton"]);
 
       await controls.click("@openCloseButton");
     }
@@ -220,12 +224,11 @@ const tests: GreenCometTests = {
     await controls.click("@openCloseButton");
     await controls.expect.element("@openCloseButton").to.have.attribute("data-icon", "chevron-down");
     await expectAllNotPresent(controls, [
-      "@openCloseButton", "@gridCheckbox",
-      "@constellationsCheckbox", "@horizonCheckbox",
+      "@gridCheckbox", "@constellationsCheckbox", "@horizonCheckbox",
       "@selectedLocationTimeLabel", "@selectedLocationTimeInput",
       "@timeIcon", "@centerOnNowButton", "@playCometImagesButton"
     ]);
-    await controls.expect.element("@topRow").to.not.visible;
+    await expectAllVisible(controls, ["@topRow", "@openCloseButton"]);
 
     await percyScreenshot(this.driver, "Control panel closed");
   },
