@@ -140,7 +140,7 @@ const controls = {
       selector: "#controls-top-row"
     },
     openCloseButton: {
-      selector: ".svg-inline--fa[class*=fa-chevron]"
+      selector: ".svg-inline--fa[class*=fa-gear], .svg-inline--fa[class*=fa-chevron]"
     },
     optionCheckbox: {
       selector: ".v-checkbox"
