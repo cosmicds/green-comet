@@ -312,6 +312,29 @@
       </div>
     </div>
 
+    <!-- WebGL2 not enabled dialog --> 
+    <v-dialog
+      class="error-dialog"
+      :style="cssVars"
+      v-model="showWebGL2Warning"
+      persistent
+    >
+      <v-card>
+        <div class="error-message">
+          <p>
+            <strong>This app requires WebGL 2</strong> 
+          </p>
+          <p class="mt-2">
+            Check your browser's settings and enable WebGL 2 ("graphics acceleration" on some browsers).
+          </p> 
+          <p class="mt-2">
+            You can check whether your browser supports WebGL 2
+            and get assistance <a href="https://get.webgl.org/webgl2/" target="_blank" rel="noopener noreferrer">here</a>.
+          </p> 
+        </div>
+      </v-card>
+    </v-dialog>
+
     <v-dialog
       id="video-container"
       v-model="showVideoSheet"
@@ -753,6 +776,8 @@ export default defineComponent({
     const uuid = maybeUUID ?? v4();
     const ratingOptedOut = window.localStorage.getItem("cds-green-comet-rating-optout")?.toLowerCase() === "true";
     return {
+      showWebGL2Warning: false,
+
       showSplashScreen: true,
       imagesetLayers: {} as Record<string, ImageSetLayer>,
       layersLoaded: false,
@@ -825,6 +850,19 @@ export default defineComponent({
   },
 
   mounted() {
+
+    if (!this.isWebGL2Enabled()) {
+      this.showWebGL2Warning = true;
+      this.layersLoaded = true;
+      this.positionSet = true;
+      this.showSplashScreen = false;
+      // eslint-disable-next-lint @typescript-eslint/ban-ts-comment
+      // @ts-expect-error `canvas` is defined
+      WWTControl.singleton.canvas.setAttribute("hidden", "true");
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      WWTControl.singleton.renderOneFrame = function() {};
+      return;
+    }
 
     this.waitForReady().then(async () => {
 
@@ -1868,6 +1906,15 @@ export default defineComponent({
       this.ratingOptedOut = true;
       window.localStorage.setItem("cds-green-comet-rating-optout", "true");
     },
+
+    isWebGL2Enabled(): boolean {
+      // It doesn't seem like there's a better way to do this than just to try and get a context
+      // https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/By_example/Detect_WebGL
+      // NB: The engine specifically wants a webgl2 context
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl2");
+      return gl instanceof WebGL2RenderingContext;
+    },
   },
 
   watch: {
@@ -2877,5 +2924,23 @@ input[type="range"]::-moz-range-track {
   .v-field--variant-filled .v-field__outline:after, .v-field--variant-underlined .v-field__outline:after {
     border-style: none !important;
   }
+}
+
+.error-dialog {
+  width: auto;
+  height: auto;
+  max-width: 500px;
+  border-radius: 10px;
+
+  .v-card {
+    border-radius: 10px !important;
+  }
+}
+
+.error-message {
+  padding: 1rem;
+  border: 1px solid var(--comet-color);
+  text-align: center;
+  border-radius: 10px;
 }
 </style>
