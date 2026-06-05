@@ -1004,7 +1004,7 @@ export default defineComponent({
         this.positionSet = true;
       }, 100);
 
-      this.ratingDisplaySetup();
+      // this.ratingDisplaySetup();
 
     });
 
